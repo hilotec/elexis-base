@@ -4,5 +4,5 @@
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://www.medelexis.ch/services ../medelexis-commons/rsc/service.xsd ">
 	<service:description>Elexis Basismodul</service:description>
-	<service:depends>ch.rgw.utility</service:depends>
+	<service:depends>ch.rgw.utility ch.elexis.eigenartikel</service:depends>
 </service:service>
