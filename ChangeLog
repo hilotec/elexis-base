@@ -1,6 +1,10 @@
 Offene Probleme
 - Tests von agenda, arzttarife von trunk sind noch nicht migriert
 
+Changelog für 2.1.5.2
+0a190a03c082: 2011-07-22: Niklaus Giger: Ticket #538: medelexis.xml fix für ch.elexis
+bd8a9a5180d1: 2011-07-08: mdescher: Modified medelexis.xml to include ch.elexis.eigenartikel
+
 Changelog für 2.1.5.1
 
 320a9d979602: 2011-06-15: mdescher: Ticket #470: Allgemeines Refaktoring: Auslagerung der BezugsKontaktAuswahl
