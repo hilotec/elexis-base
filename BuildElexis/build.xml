@@ -61,7 +61,7 @@
 		
 -->
 <project name="elexis" default="all">
-	<property name="version" value="2.1.5.x" />
+	<property name="version" value="2.1.5.2" />
 	<property name="javatarget" value="1.6" />
 	<property name="debug" value="true" />
 	<property name="optimize" value="off" />
