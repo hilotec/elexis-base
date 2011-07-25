@@ -304,6 +304,7 @@ osgi.bundles=org.eclipse.equinox.common@2:start,org.eclipse.update.configurator@
 				<include name="configuration/**" />
 				<include name="plugins/ch.elexis_*/**" />
 				<include name="plugins/ch.rgw.utility_*/**" />
+				<include name="plugins/ch.elexis.eigenartikel_*/**" />
 				<include name="plugins/ch.elexis.mysql.connector_*/**" />
 				<include name="plugins/ch.elexis.h2.connector_*/**" />
 				<include name="plugins/ch.elexis.postgresql.connector_*/**" />
