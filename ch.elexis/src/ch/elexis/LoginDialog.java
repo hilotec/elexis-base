@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2005-2010, G. Weirich and Elexis
+ * Copyright (c) 2005-2011, G. Weirich and Elexis
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -16,18 +16,21 @@ package ch.elexis;
 
 import java.util.List;
 
+import org.eclipse.core.runtime.IConfigurationElement;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.dialogs.IMessageProvider;
 import org.eclipse.jface.dialogs.TitleAreaDialog;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.FocusAdapter;
-import org.eclipse.swt.events.FocusEvent;
 import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.*;
-import org.eclipse.ui.internal.actions.ModifyWorkingSetDelegate;
+import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.Text;
 
+import ch.elexis.core.util.Extensions;
 import ch.elexis.data.Anwender;
 import ch.elexis.data.Query;
 import ch.elexis.util.SWTHelper;
@@ -64,6 +67,25 @@ public class LoginDialog extends TitleAreaDialog {
 		}
 		// usr.addModifyListener(be);
 		// pwd.addModifyListener(be);
+		/*
+		List<IConfigurationElement> newsModules = Extensions.getExtensions("ch.elexis.LoginNews");
+		for(IConfigurationElement ice:newsModules){
+			System.out.println(ice.getAttribute("name"));
+			System.out.println(ice.getAttribute("class"));
+		}
+		*/
+		List newsModules=Extensions.getClasses("ch.elexis.LoginNews", "class");
+		
+		if(newsModules.size()>0){
+			Composite cNews=new Composite(ret,SWT.NONE);
+			cNews.setLayoutData(SWTHelper.getFillGridData(2, true, 1, true));
+			cNews.setLayout(new GridLayout());
+			for(ILoginNews lm:(List<ILoginNews>)newsModules){
+				Composite comp=lm.getComposite(cNews);
+				comp.setLayoutData(SWTHelper.getFillGridData());
+			}
+		}
+		
 		return ret;
 	}
 	
@@ -90,7 +112,8 @@ public class LoginDialog extends TitleAreaDialog {
 		super.create();
 		getButton(IDialogConstants.OK_ID).setText(Messages.LoginDialog_login);
 		getButton(IDialogConstants.CANCEL_ID).setText(Messages.LoginDialog_terminate);
-		// getButton(IDialogConstants.OK_ID).setEnabled(false);
+		// getButton(IDialogConstants.OK_ID).setEnabled(false); 
+		
 		
 	}
 	
@@ -107,5 +130,6 @@ public class LoginDialog extends TitleAreaDialog {
 		}
 		
 	}
+
 	
 }
