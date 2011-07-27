@@ -2,6 +2,9 @@ Offene Probleme
 - Tests von agenda, arzttarife von trunk sind noch nicht migriert
 
 Changelog für 2.1.5.2
+007be95c54be: 2011-07-25: rgw@iMac: add eigenartikel to mac build
+d57dbf10fd1b: 2011-07-25: rgw@iMac: include eigenartikel in base package
+46bba5f0aff2: 2011-07-08: mdescher: medelexis.xml for Eigenartikel
 0a190a03c082: 2011-07-22: Niklaus Giger: Ticket #538: medelexis.xml fix für ch.elexis
 bd8a9a5180d1: 2011-07-08: mdescher: Modified medelexis.xml to include ch.elexis.eigenartikel
 
