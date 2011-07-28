@@ -374,6 +374,8 @@ public class KonsDetailView extends ViewPart implements ElexisEventListener, IAc
 	 */
 	private void setKons(final Konsultation b){
 		if (b != null) {
+			if(actKons != null)
+				actKons.updateEintrag(text.getContentsAsXML(), false);
 			/*
 			 * System.out.println("setKons: " + b.getLabel()); Fall fall = b.getFall();
 			 * System.out.println(fall.getLabel()); Patient oat = fall.getPatient();
