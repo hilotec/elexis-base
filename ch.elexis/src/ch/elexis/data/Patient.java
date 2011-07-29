@@ -7,8 +7,9 @@
  *
  * Contributors:
  *    G. Weirich - initial implementation
+ *    M. Descher - added loadByPatientID
  * 
- *  $Id: Patient.java 6232 2010-03-18 15:30:24Z rgw_ch $
+ *  $Id$
  *******************************************************************************/
 package ch.elexis.data;
 
@@ -426,6 +427,18 @@ public class Patient extends Person {
 	public static Patient load(final String id){
 		Patient ret = new Patient(id);
 		return ret;
+	}
+	
+	/**
+	 * Einen Patienten aufgrund seiner PatientenNr laden
+	 * 
+	 * @param patientNr
+	 * @return Patient falls gefunden, <code>null</code> wenn nicht gefunden
+	 */
+	public static Patient loadByPatientID(String patientNr) {
+		String patID = new Query<Patient>(Patient.class).findSingle(
+			Patient.FLD_PATID, Query.EQUALS, patientNr);
+		return Patient.load(patID);
 	}
 	
 	private Patient(final String id){

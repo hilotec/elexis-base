@@ -8,7 +8,7 @@
  * Contributors:
  *    G. Weirich - initial implementation
  *    
- *    $Id: ArtikelSelektor.java 5330 2009-05-30 11:24:09Z rgw_ch $
+ *    $Id$
  *******************************************************************************/
 
 package ch.elexis.views.artikel;
@@ -43,6 +43,8 @@ import org.eclipse.ui.part.ViewPart;
 
 import ch.elexis.Desk;
 import ch.elexis.actions.GlobalActions;
+import ch.elexis.commands.EditEigenartikelUi;
+import ch.elexis.commands.EditEigenleistungUi;
 import ch.elexis.data.Artikel;
 import ch.elexis.data.PersistentObject;
 import ch.elexis.dialogs.ArtikelDetailDialog;
@@ -147,7 +149,7 @@ public class ArtikelSelektor extends ViewPart implements ISaveablePart2 {
 				IStructuredSelection sel = (IStructuredSelection) tv.getSelection();
 				if ((sel != null) && (!sel.isEmpty())) {
 					Artikel art = (Artikel) sel.getFirstElement();
-					new ArtikelDetailDialog(getViewSite().getShell(), art).open();
+					EditEigenartikelUi.executeWithParams(art);
 				}
 			}
 			
@@ -239,8 +241,7 @@ public class ArtikelSelektor extends ViewPart implements ISaveablePart2 {
 					cv.addDoubleClickListener(new CommonViewer.DoubleClickListener() {
 						
 						public void doubleClicked(final PersistentObject obj, final CommonViewer cv){
-							new ArtikelDetailDialog(getViewSite().getShell(), obj).open();
-							
+							EditEigenartikelUi.executeWithParams(obj);
 						}
 					});
 					vc.getContentProvider().startListening();

@@ -8,7 +8,7 @@
  * Contributors:
  *    G. Weirich - initial implementation
  *    
- *    $Id: ICD10.java 5184 2009-02-24 15:47:22Z rgw_ch $
+ *    $Id$
  *******************************************************************************/
 
 package ch.elexis.data;

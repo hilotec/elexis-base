@@ -8,7 +8,7 @@
  * Contributors:
  *    G. Weirich - initial implementation
  * 
- *  $Id: VerrechnungsDisplay.java 6246 2010-03-20 19:42:29Z rgw_ch $
+ *  $Id$
  *******************************************************************************/
 
 package ch.elexis.views;
@@ -16,7 +16,6 @@ package ch.elexis.views;
 import java.text.ParseException;
 import java.util.List;
 
-import org.eclipse.core.runtime.IStatus;
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.action.IMenuListener;
@@ -25,8 +24,11 @@ import org.eclipse.jface.action.MenuManager;
 import org.eclipse.jface.action.Separator;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.InputDialog;
+import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.dnd.DropTargetEvent;
+import org.eclipse.swt.events.SelectionAdapter;
+import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
@@ -42,7 +44,9 @@ import org.eclipse.ui.statushandlers.StatusManager;
 import ch.elexis.Desk;
 import ch.elexis.Hub;
 import ch.elexis.actions.CodeSelectorHandler;
+import ch.elexis.actions.ElexisEvent;
 import ch.elexis.actions.ElexisEventDispatcher;
+import ch.elexis.actions.ElexisEventListenerImpl;
 import ch.elexis.admin.AccessControlDefaults;
 import ch.elexis.data.IVerrechenbar;
 import ch.elexis.data.Konsultation;
@@ -51,20 +55,19 @@ import ch.elexis.data.PersistentObject;
 import ch.elexis.data.Prescription;
 import ch.elexis.data.Verrechnet;
 import ch.elexis.status.ElexisStatus;
-import ch.elexis.util.Log;
 import ch.elexis.util.PersistentObjectDropTarget;
 import ch.elexis.util.SWTHelper;
 import ch.elexis.views.codesystems.LeistungenView;
-import ch.rgw.tools.ExHandler;
 import ch.rgw.tools.Money;
 import ch.rgw.tools.Result;
 import ch.rgw.tools.StringTool;
 
 public class VerrechnungsDisplay extends Composite {
 	Table tVerr;
+	TableViewer viewer;
+	MenuManager contextMenuManager;
 	private final Hyperlink hVer;
 	private final PersistentObjectDropTarget dropTarget;
-	private final Log log = Log.get("VerrechnungsDisplay"); //$NON-NLS-1$
 	private IAction chPriceAction, chCountAction, chTextAction, removeAction, removeAllAction;
 	private static final String CHPRICE = Messages.getString("VerrechnungsDisplay.changePrice"); //$NON-NLS-1$
 	private static final String CHCOUNT = Messages.getString("VerrechnungsDisplay.changeNumber"); //$NON-NLS-1$
@@ -102,9 +105,29 @@ public class VerrechnungsDisplay extends Composite {
 		tVerr = Desk.getToolkit().createTable(this, SWT.SINGLE);
 		tVerr.setLayoutData(new GridData(GridData.FILL_BOTH));
 		tVerr.setMenu(createVerrMenu());
+		// dummy table viewer needed for SelectionsProvider for Menu
+		viewer = new TableViewer(tVerr);
+		// add selection event to table which provides selection to ElexisEventDispatcher
+		tVerr.addSelectionListener(new SelectionAdapter() {
+			@Override
+			public void widgetSelected(SelectionEvent e){
+				 TableItem[] selection = tVerr.getSelection();
+				 Verrechnet verrechnet = (Verrechnet) selection[0].getData();
+				 ElexisEventDispatcher.fireSelectionEvent(verrechnet);
+			}
+		});
 		dropTarget =
 			new PersistentObjectDropTarget(
 				Messages.getString("VerrechnungsDisplay.doBill"), tVerr, new DropReceiver()); //$NON-NLS-1$
+		// refresh the table if a update to a Verrechnet occurs
+		ElexisEventDispatcher.getInstance()
+			.addListeners(new ElexisEventListenerImpl(Verrechnet.class, ElexisEvent.EVENT_UPDATE) {
+				@Override
+				public void runInUi(ElexisEvent ev){
+					Konsultation actKons = (Konsultation) ElexisEventDispatcher.getSelected(Konsultation.class);
+					setLeistungen(actKons);
+				}
+		});
 	}
 	
 	public void clear(){
@@ -182,32 +205,34 @@ public class VerrechnungsDisplay extends Composite {
 	}
 	
 	private Menu createVerrMenu(){
-		MenuManager mgr = new MenuManager();
-		mgr.setRemoveAllWhenShown(true);
-		mgr.addMenuListener(new IMenuListener() {
+		contextMenuManager = new MenuManager();
+		contextMenuManager.setRemoveAllWhenShown(true);
+		contextMenuManager.addMenuListener(new IMenuListener() {
 			public void menuAboutToShow(IMenuManager manager){
 				int sel = tVerr.getSelectionIndex();
-				TableItem ti = tVerr.getItem(sel);
-				Verrechnet v = (Verrechnet) ti.getData();
-				manager.add(chPriceAction);
-				manager.add(chCountAction);
-				List<IAction> itemActions = v.getVerrechenbar().getActions(v);
-				if ((itemActions != null) && (itemActions.size() > 0)) {
-					manager.add(new Separator());
-					for (IAction a : itemActions) {
-						if (a != null) {
-							manager.add(a);
+				if(sel != -1) {
+					TableItem ti = tVerr.getItem(sel);
+					Verrechnet v = (Verrechnet) ti.getData();
+					manager.add(chPriceAction);
+					manager.add(chCountAction);
+					List<IAction> itemActions = v.getVerrechenbar().getActions(v);
+					if ((itemActions != null) && (itemActions.size() > 0)) {
+						manager.add(new Separator());
+						for (IAction a : itemActions) {
+							if (a != null) {
+								manager.add(a);
+							}
 						}
 					}
+					manager.add(new Separator());
+					manager.add(chTextAction);
+					manager.add(removeAction);
+					manager.add(new Separator());
+					manager.add(removeAllAction);
 				}
-				manager.add(new Separator());
-				manager.add(chTextAction);
-				manager.add(removeAction);
-				manager.add(new Separator());
-				manager.add(removeAllAction);
 			}
 		});
-		return mgr.createContextMenu(tVerr);
+		return contextMenuManager.createContextMenu(tVerr);
 	}
 	
 	private void makeActions(){

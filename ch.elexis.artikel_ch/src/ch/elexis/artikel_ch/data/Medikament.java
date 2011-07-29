@@ -8,9 +8,11 @@
  * Contributors:
  *    G. Weirich - initial implementation
  *    
- *  $Id: Medikament.java 5932 2010-01-14 22:30:04Z rgw_ch $
+ *  $Id$
  *******************************************************************************/
 package ch.elexis.artikel_ch.data;
+
+import java.util.Hashtable;
 
 import ch.elexis.data.Artikel;
 
@@ -55,4 +57,22 @@ public class Medikament extends Artikel {
 		return true;
 	}
 	
+	@Override
+	@SuppressWarnings("rawtypes")
+	public VatInfo getVatInfo(){
+		// MWST Info is put into ext info by MedikamentImporter
+		// Code Mehrwertsteuer (CMWS) - 1stellig
+		// 1: voller MWSt-Satz (zur Zeit 6.5%)
+		// 2: reduzierter MWSt-Satz (zur Zeit 2%)
+		// 3: von der MWSt befreit
+		Hashtable info = getHashtable(Artikel.FLD_EXTINFO);
+		String typ = (String) info.get(MedikamentImporter.MWST_TYP);
+		if(typ != null && typ.equals("2"))
+			return VatInfo.VAT_CH_ISMEDICAMENT;
+		else if(typ != null && typ.equals("1"))
+			return VatInfo.VAT_CH_NOTMEDICAMENT;
+		else if(typ != null && typ.equals("3"))
+			return VatInfo.VAT_NONE;
+		return VatInfo.VAT_NONE;
+	}
 }

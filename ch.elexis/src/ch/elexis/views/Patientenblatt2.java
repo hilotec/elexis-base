@@ -27,10 +27,7 @@ import org.eclipse.swt.events.KeyListener;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.IViewSite;
 import org.eclipse.ui.forms.events.ExpansionAdapter;
@@ -63,6 +60,7 @@ import ch.elexis.data.PersistentObject;
 import ch.elexis.data.Person;
 import ch.elexis.dialogs.AddBuchungDialog;
 import ch.elexis.dialogs.AnschriftEingabeDialog;
+import ch.elexis.dialogs.BezugsKontaktAuswahl;
 import ch.elexis.dialogs.KontaktDetailDialog;
 import ch.elexis.dialogs.KontaktSelektor;
 import ch.elexis.preferences.UserSettings2;
@@ -86,9 +84,9 @@ public class Patientenblatt2 extends Composite implements IActivationListener {
 	private InputPanel ipp;
 	private IAction lockAction, removeZAAction, showZAAction;
 	// MenuItem delZA;
-	private final static String CFG_BEZUGSKONTAKTTYPEN = "views/patientenblatt/Bezugskontakttypen"; //$NON-NLS-1$
+	public final static String CFG_BEZUGSKONTAKTTYPEN = "views/patientenblatt/Bezugskontakttypen"; //$NON-NLS-1$
 	public final static String CFG_EXTRAFIELDS = "views/patientenblatt/extrafelder"; //$NON-NLS-1$
-	private final static String SPLITTER = "#!>"; //$NON-NLS-1$
+	public final static String SPLITTER = "#!>"; //$NON-NLS-1$
 	private ElexisEventListenerImpl eeli_pat = new ElexisEventListenerImpl(Patient.class) {
 		public void runInUi(ElexisEvent ev){
 			setPatient(ElexisEventDispatcher.getSelectedPatient());
@@ -549,50 +547,4 @@ public class Patientenblatt2 extends Composite implements IActivationListener {
 		}
 		
 	}
-	
-	class BezugsKontaktAuswahl extends Dialog {
-		Combo cbType;
-		String result = ""; //$NON-NLS-1$
-		
-		public BezugsKontaktAuswahl(){
-			super(Patientenblatt2.this.getShell());
-		}
-		
-		@Override
-		public void create(){
-			super.create();
-			getShell().setText(Messages.getString("Patientenblatt2.kindOfRelation")); //$NON-NLS-1$
-		}
-		
-		@Override
-		protected Control createDialogArea(Composite parent){
-			Composite ret = (Composite) super.createDialogArea(parent);
-			new Label(ret, SWT.NONE).setText(Messages
-				.getString("Patientenblatt2.pleaseEnterKindOfRelationship")); //$NON-NLS-1$
-			cbType = new Combo(ret, SWT.NONE);
-			cbType.setLayoutData(SWTHelper.getFillGridData(1, true, 1, false));
-			String bez = Hub.globalCfg.get(CFG_BEZUGSKONTAKTTYPEN, ""); //$NON-NLS-1$
-			cbType.setItems(bez.split(SPLITTER));
-			return ret;
-		}
-		
-		@Override
-		protected void okPressed(){
-			result = cbType.getText();
-			String[] items = cbType.getItems();
-			String nitem = cbType.getText();
-			String res = ""; //$NON-NLS-1$
-			if (StringTool.getIndex(items, nitem) == -1) {
-				res = nitem + SPLITTER;
-			}
-			Hub.globalCfg.set(CFG_BEZUGSKONTAKTTYPEN, res + StringTool.join(items, SPLITTER));
-			super.okPressed();
-		}
-		
-		public String getResult(){
-			return result;
-		}
-		
-	}
-	
 }

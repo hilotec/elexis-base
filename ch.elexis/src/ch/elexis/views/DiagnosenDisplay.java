@@ -8,7 +8,7 @@
  * Contributors:
  *    G. Weirich - initial implementation
  *    
- *  $Id: DiagnosenDisplay.java 6246 2010-03-20 19:42:29Z rgw_ch $
+ *  $Id$
  *******************************************************************************/
 
 package ch.elexis.views;

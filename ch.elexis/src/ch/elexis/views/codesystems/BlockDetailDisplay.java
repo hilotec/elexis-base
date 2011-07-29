@@ -8,18 +8,15 @@
  * Contributors:
  *    G. Weirich - initial implementation
  * 
- *  $Id: BlockDetailDisplay.java 6041 2010-02-01 13:53:45Z rgw_ch $
+ *  $Id$
  *******************************************************************************/
 
 package ch.elexis.views.codesystems;
 
 import java.util.List;
 
-import org.eclipse.core.runtime.IStatus;
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.IAction;
-import org.eclipse.jface.dialogs.Dialog;
-import org.eclipse.jface.dialogs.TitleAreaDialog;
 import org.eclipse.jface.viewers.IStructuredContentProvider;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.LabelProvider;
@@ -38,20 +35,21 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Group;
-import org.eclipse.swt.widgets.Label;
-import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.IViewSite;
+import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.forms.widgets.ScrolledForm;
+import org.eclipse.ui.handlers.IHandlerService;
 import org.eclipse.ui.statushandlers.StatusManager;
 
 import ch.elexis.Desk;
 import ch.elexis.Hub;
 import ch.elexis.StringConstants;
 import ch.elexis.actions.ElexisEventDispatcher;
+import ch.elexis.commands.CreateEigenleistungUi;
+import ch.elexis.commands.EditEigenleistungUi;
 import ch.elexis.data.Eigenleistung;
 import ch.elexis.data.ICodeElement;
 import ch.elexis.data.IVerrechenbar;
@@ -64,9 +62,7 @@ import ch.elexis.util.Log;
 import ch.elexis.util.SWTHelper;
 import ch.elexis.util.ViewMenus;
 import ch.elexis.views.IDetailDisplay;
-import ch.rgw.tools.ExHandler;
 import ch.rgw.tools.StringTool;
-import ch.rgw.tools.TimeTool;
 
 public class BlockDetailDisplay implements IDetailDisplay {
 	ScrolledForm form;
@@ -222,15 +218,17 @@ public class BlockDetailDisplay implements IDetailDisplay {
 		bEigen.addSelectionListener(new SelectionAdapter() {
 			@Override
 			public void widgetSelected(final SelectionEvent e){
-				EigenLeistungDlg dlg = new EigenLeistungDlg(site.getShell(), null);
-				if (dlg.open() == Dialog.OK) {
-					Leistungsblock lb =
-						(Leistungsblock) ElexisEventDispatcher.getSelected(Leistungsblock.class);
-					if (lb != null) {
-						lb.addElement(dlg.result);
-						lLst.refresh();
-					}
+				try {
+					// execute the command
+					IHandlerService handlerService =
+						(IHandlerService) PlatformUI.getWorkbench().getActiveWorkbenchWindow()
+						.getService(IHandlerService.class);
+
+					handlerService.executeCommand(CreateEigenleistungUi.COMMANDID, null);
+				} catch (Exception ex) {
+					throw new RuntimeException(CreateEigenleistungUi.COMMANDID, ex);
 				}
+				lLst.refresh();
 			}
 		});
 		makeActions();
@@ -284,79 +282,6 @@ public class BlockDetailDisplay implements IDetailDisplay {
 		return Messages.getString("BlockDetailDisplay.blocks"); //$NON-NLS-1$
 	}
 	
-	class EigenLeistungDlg extends TitleAreaDialog {
-		Text tName, tKurz, tEK, tVK, tTime;
-		// Eigenleistung result;
-		IVerrechenbar result;
-		
-		EigenLeistungDlg(final Shell shell, final IVerrechenbar lstg){
-			super(shell);
-			result = lstg;
-		}
-		
-		@Override
-		public void create(){
-			super.create();
-			if (result instanceof Eigenleistung) {
-				setTitle(Messages.getString("BlockDetailDisplay.editServiceCaption")); //$NON-NLS-1$
-				setMessage(Messages.getString("BlockDetailDisplay.editServiceBody")); //$NON-NLS-1$
-			} else if (result == null) {
-				setTitle(Messages.getString("BlockDetailDisplay.defineServiceCaption")); //$NON-NLS-1$
-				setMessage(Messages.getString("BlockDetailDisplay.defineServiceBody")); //$NON-NLS-1$
-			}
-			getShell().setText(Messages.getString("BlockDetailDisplay.SerlfDefinedService")); //$NON-NLS-1$
-		}
-		
-		@Override
-		protected Control createDialogArea(final Composite parent){
-			Composite ret = new Composite(parent, SWT.NONE);
-			ret.setLayoutData(SWTHelper.getFillGridData(1, true, 1, true));
-			ret.setLayout(new GridLayout(2, false));
-			new Label(ret, SWT.NONE).setText(Messages.getString("BlockDetailDisplay.name")); //$NON-NLS-1$
-			tName = new Text(ret, SWT.BORDER);
-			tName.setLayoutData(SWTHelper.getFillGridData(1, true, 1, false));
-			new Label(ret, SWT.NONE).setText(Messages.getString("BlockDetailDisplay.shortname")); //$NON-NLS-1$
-			tKurz = new Text(ret, SWT.BORDER);
-			tKurz.setLayoutData(SWTHelper.getFillGridData(1, true, 1, false));
-			new Label(ret, SWT.NONE).setText(Messages.getString("BlockDetailDisplay.costInCents")); //$NON-NLS-1$
-			tEK = new Text(ret, SWT.BORDER);
-			tEK.setLayoutData(SWTHelper.getFillGridData(1, true, 1, false));
-			new Label(ret, SWT.NONE).setText(Messages.getString("BlockDetailDisplay.priceInCents")); //$NON-NLS-1$
-			tVK = new Text(ret, SWT.BORDER);
-			tVK.setLayoutData(SWTHelper.getFillGridData(1, true, 1, false));
-			new Label(ret, SWT.NONE)
-				.setText(Messages.getString("BlockDetailDisplay.timeInMinutes")); //$NON-NLS-1$
-			tTime = new Text(ret, SWT.BORDER);
-			tTime.setLayoutData(SWTHelper.getFillGridData(1, true, 1, false));
-			if (result instanceof Eigenleistung) {
-				Eigenleistung el = (Eigenleistung) result;
-				tName.setText(el.get(Messages.getString("BlockDetailDisplay.title"))); //$NON-NLS-1$
-				tKurz.setText(el.get(Messages.getString("BlockDetailDisplay.code"))); //$NON-NLS-1$
-				tEK.setText(el.getKosten(new TimeTool()).getCentsAsString());
-				tVK.setText(el.getPreis(new TimeTool(), null).getCentsAsString());
-			}
-			return ret;
-		}
-		
-		@Override
-		protected void okPressed(){
-			if (result == null) {
-				result =
-					new Eigenleistung(tKurz.getText(), tName.getText(), tEK.getText(), tVK
-						.getText());
-			} else if (result instanceof Eigenleistung) {
-				((Eigenleistung) result).set(new String[] {
-					Eigenleistung.CODE, Eigenleistung.BEZEICHNUNG, Eigenleistung.EK_PREIS,
-					Eigenleistung.VK_PREIS
-				}, new String[] {
-					tKurz.getText(), tName.getText(), tEK.getText(), tVK.getText()
-				});
-			}
-			super.okPressed();
-		}
-		
-	};
-	
 	private void makeActions(){
 		removeLeistung = new Action(Messages.getString("BlockDetailDisplay.remove")) { //$NON-NLS-1$
 				@Override
@@ -393,11 +318,10 @@ public class BlockDetailDisplay implements IDetailDisplay {
 				
 				@Override
 				public void run(){
-					IVerrechenbar iv =
-						(IVerrechenbar) ((IStructuredSelection) lLst.getSelection())
-							.getFirstElement();
-					EigenLeistungDlg eld = new EigenLeistungDlg(site.getShell(), iv);
-					eld.open();
+					IStructuredSelection sel = (IStructuredSelection) lLst.getSelection();
+					PersistentObject parameter = 
+						(PersistentObject) sel.getFirstElement();
+					EditEigenleistungUi.executeWithParams(parameter);
 				}
 			};
 	}

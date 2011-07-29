@@ -8,7 +8,7 @@
  * Contributors:
  *    Daniel Lutz - initial implementation, based on RechnungsDrucker
  *
- * $Id: KGDrucker.java 6043 2010-02-01 14:34:06Z rgw_ch $
+ * $Id$
  *******************************************************************************/
 
 package ch.elexis.util;

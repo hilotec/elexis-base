@@ -8,7 +8,7 @@
  * Contributors:
  *    D. Lutz - initial implementation
  *    
- *  $Id: LabGroup.java 4368 2008-09-03 21:13:24Z danlutz $
+ *  $Id$
  *******************************************************************************/
 
 package ch.elexis.data;

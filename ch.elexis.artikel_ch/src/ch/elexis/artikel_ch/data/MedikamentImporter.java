@@ -43,7 +43,7 @@ import ch.rgw.tools.ExHandler;
  */
 public class MedikamentImporter extends ImporterPage {
 	static final String EQUALS = "="; //$NON-NLS-1$
-	private static final String MWST_TYP = "MWSt-Typ"; //$NON-NLS-1$
+	public static final String MWST_TYP = "MWSt-Typ"; //$NON-NLS-1$
 	private static final String EAN = "EAN"; //$NON-NLS-1$
 	private static final String HERSTELLER = "Hersteller"; //$NON-NLS-1$
 	private static final String LAGERART = "Lagerart"; //$NON-NLS-1$

@@ -61,7 +61,7 @@
 		
 -->
 <project name="elexis" default="all">
-          <property name="version" value="2.1.x" />
+          <property name="version" value="2.1.6.dev" />
 	<property name="javatarget" value="1.6" />
 	<property name="debug" value="true" />
 	<property name="optimize" value="off" />
@@ -304,6 +304,7 @@ osgi.bundles=org.eclipse.equinox.common@2:start,org.eclipse.update.configurator@
 				<include name="configuration/**" />
 				<include name="plugins/ch.elexis_*/**" />
 				<include name="plugins/ch.rgw.utility_*/**" />
+				<include name="plugins/ch.elexis.eigenartikel_*/**" />
 				<include name="plugins/ch.elexis.mysql.connector_*/**" />
 				<include name="plugins/ch.elexis.h2.connector_*/**" />
 				<include name="plugins/ch.elexis.postgresql.connector_*/**" />

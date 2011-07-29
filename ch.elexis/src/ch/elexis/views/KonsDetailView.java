@@ -278,6 +278,7 @@ public class KonsDetailView extends ViewPart implements ElexisEventListener, IAc
 		dd.setLayoutData(SWTHelper.getFillGridData(1, true, 1, true));
 		vd = new VerrechnungsDisplay(getSite().getPage(), botright, SWT.NONE);
 		vd.setLayoutData(SWTHelper.getFillGridData(1, true, 1, true));
+		getSite().registerContextMenu(ID + ".VerrechnungsDisplay", vd.contextMenuManager, vd.viewer);
 		
 		makeActions();
 		ViewMenus menu = new ViewMenus(getViewSite());

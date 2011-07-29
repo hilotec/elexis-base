@@ -8,7 +8,7 @@
  * Contributors:
  *    G. Weirich - initial implementation
  *    
- * $Id: ArtikelDetailDialog.java 5970 2010-01-27 16:43:04Z rgw_ch $
+ * $Id$
  *******************************************************************************/
 
 package ch.elexis.dialogs;
@@ -31,7 +31,7 @@ import ch.elexis.util.LabeledInputField.AutoForm;
 import ch.elexis.views.artikel.Artikeldetail;
 
 public class ArtikelDetailDialog extends TitleAreaDialog {
-	Artikel art;
+	protected Artikel art;
 	
 	public ArtikelDetailDialog(Shell shell, PersistentObject o){
 		super(shell);

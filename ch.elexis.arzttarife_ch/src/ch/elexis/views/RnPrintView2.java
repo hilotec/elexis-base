@@ -8,7 +8,7 @@
  * Contributors:
  *    G. Weirich - initial implementation
  * 
- * $Id: RnPrintView2.java 6143 2010-02-15 20:52:17Z rgw_ch $
+ * $Id$
  *******************************************************************************/
 package ch.elexis.views;
 
@@ -379,10 +379,6 @@ public class RnPrintView2 extends ViewPart {
 		double seitentotal = 0.0;
 		double sumPfl = 0.0;
 		double sumNpfl = 0.0;
-		double mwst0 = 0.0;
-		double mwst1 = 0.0;
-		double mwst2 = 0.0;
-		double sumMwst = 0.0;
 		double sumTotal = 0.0;
 		ITextPlugin tp = text.getPlugin();
 		cmAvail = cmFirstPage;
@@ -424,7 +420,6 @@ public class RnPrintView2 extends ViewPart {
 			sb.append(getValue(s, "unit_factor.tt")).append("\t"); //$NON-NLS-1$ //$NON-NLS-2$
 			sb.append("1\t1\t"); //$NON-NLS-1$
 			String pfl = s.getAttributeValue("obligation"); //$NON-NLS-1$
-			String vat = getValue(s, "vat_rate"); //$NON-NLS-1$
 			String am = s.getAttributeValue(XMLExporter.ATTR_AMOUNT); //$NON-NLS-1$
 			// double dLine=Double.parseDouble(am);
 			double dLine;
@@ -446,16 +441,7 @@ public class RnPrintView2 extends ViewPart {
 				sb.append("1\t"); //$NON-NLS-1$
 				sumNpfl += dLine;
 			}
-			if (vat.equals("0")) { //$NON-NLS-1$
-				mwst0 += dLine;
-			} else if (vat.equals("1")) { //$NON-NLS-1$
-				mwst1 += dLine;
-				sumMwst += (0.074 * dLine);
-			} else {
-				mwst2 += dLine;
-				sumMwst += (0.024 * dLine);
-			}
-			sb.append(vat).append("\t"); //$NON-NLS-1$
+			sb.append(getValue(s, "vat_rate")).append("\t"); //$NON-NLS-1$
 			
 			sb.append(am);
 			seitentotal += dLine;
@@ -535,21 +521,32 @@ public class RnPrintView2 extends ViewPart {
 		footer.append("\n\n").append("■ Gesamtbetrag\t\tCHF\t\t").append(df.format(sumTotal)) //$NON-NLS-1$ //$NON-NLS-2$
 			.append("\tdavon PFL \t").append(df.format(sumPfl)).append("\tAnzahlung \t") //$NON-NLS-1$ //$NON-NLS-2$
 			.append(mPaid.getAmountAsString())
-			.append("\tFälliger Betrag \t").append(mDue.getAmountAsString()) //$NON-NLS-1$
-			.append("\n\n■ MwSt.Nr. \t\t"); //$NON-NLS-1$
+			.append("\tFälliger Betrag \t").append(mDue.getAmountAsString()); //$NON-NLS-1$
+
+		Element vat = balance.getChild("vat", ns);
+		String vatNumber = getValue(vat, "vat_number");
+		if(vatNumber.equals(" "))
+			vatNumber = "keine";
+			
+		footer.append("\n\n■ MwSt.Nr. \t\t"); //$NON-NLS-1$
 		cursor = print(cursor, tp, true, footer.toString());
-		cursor = print(cursor, tp, false, "keine\n\n"); //$NON-NLS-1$
-		cursor = print(cursor, tp, true, "  Code\tSatz\t\tBetrag\tMwSt\n"); //$NON-NLS-1$
+		cursor = print(cursor, tp, false, vatNumber + "\n\n"); //$NON-NLS-1$
+		cursor = print(cursor, tp, true, "  Satz\t\tBetrag\tMwSt\n"); //$NON-NLS-1$
 		tp.setFont("Helvetica", SWT.NORMAL, 9); //$NON-NLS-1$
 		footer.setLength(0);
-		footer
-			.append("■ 0\t0\t\t").append(df.format(mwst0)).append("\t 0.00\n") //$NON-NLS-1$ //$NON-NLS-2$
-			.append("■ 1\t8\t\t").append(df.format(mwst1)).append("\t").append(df.format(0.08 * mwst1)).append("\n") //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
-			.append("■ 2\t2.5\t\t").append(df.format(mwst2)).append("\t").append(df.format(0.025 * mwst2)).append("\n"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+		
+		List<Element>rates = vat.getChildren();
+		
+		for(Element rate : rates) {
+			footer.append("■ ").append(getValue(rate, "vat_rate")).append("\t\t")
+				.append(getValue(rate, "amount")).append("\t")
+				.append(getValue(rate, "vat")).append("\n"); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+		}
+		
 		cursor = print(cursor, tp, false, footer.toString());
-		cursor = print(cursor, tp, true, "\n Total\t\t\t"); //$NON-NLS-1$
+		cursor = print(cursor, tp, true, "\n Total\t\t"); //$NON-NLS-1$
 		footer.setLength(0);
-		footer.append(mDue.getAmountAsString()).append("\t").append(df.format(sumMwst)); //$NON-NLS-1$
+		footer.append(mDue.getAmountAsString()).append("\t").append(getValue(vat, "vat")); //$NON-NLS-1$
 		tp.setFont("Helvetica", SWT.BOLD, 9); //$NON-NLS-1$
 		tp.insertText(cursor, footer.toString(), SWT.LEFT);
 		if (tcCode != null) {

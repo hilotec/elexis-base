@@ -8,7 +8,7 @@
  * Contributors:
  *    G. Weirich - initial implementation
  * 
- * $Id: VerrechenbarAdapter.java 6043 2010-02-01 14:34:06Z rgw_ch $
+ * $Id$
  *******************************************************************************/
 
 package ch.elexis.data;
@@ -158,5 +158,10 @@ public abstract class VerrechenbarAdapter extends PersistentObject implements IV
 				}
 			}
 		};
+	}
+
+	@Override
+	public VatInfo getVatInfo(){
+		return VatInfo.VAT_DEFAULT;
 	}
 }

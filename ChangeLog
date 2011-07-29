@@ -1,6 +1,10 @@
 Offene Probleme
 - Tests von agenda, arzttarife von trunk sind noch nicht migriert
 
+Changelog für 2.1.5.1
+
+320a9d979602: 2011-06-15: mdescher: Ticket #470: Allgemeines Refaktoring: Auslagerung der BezugsKontaktAuswahl
+
 Changelog für 2.1.5
 
 8e98cb4bc1f4: 2011-06-30: Niklaus Giger: Ticket: #499: tableExists is no longer case-sensitive

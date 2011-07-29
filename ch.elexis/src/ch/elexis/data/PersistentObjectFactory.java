@@ -8,7 +8,7 @@
  * Contributors:
  *    G. Weirich - initial implementation
  *    
- *    $Id: PersistentObjectFactory.java 5322 2009-05-29 10:59:45Z rgw_ch $
+ *    $Id$
  *******************************************************************************/
 package ch.elexis.data;
 

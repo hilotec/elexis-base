@@ -8,7 +8,7 @@
  * Contributors:
  *    G. Weirich - initial implementation
  *    
- * $Id: LagerView.java 6048 2010-02-01 20:35:29Z rgw_ch $
+ * $Id$
  *******************************************************************************/
 package ch.elexis.views;
 
@@ -40,6 +40,7 @@ import ch.elexis.actions.ElexisEventListenerImpl;
 import ch.elexis.actions.GlobalActions;
 import ch.elexis.actions.GlobalEventDispatcher;
 import ch.elexis.actions.GlobalEventDispatcher.IActivationListener;
+import ch.elexis.commands.EditEigenartikelUi;
 import ch.elexis.data.Artikel;
 import ch.elexis.data.PersistentObject;
 import ch.elexis.dialogs.ArtikelDetailDialog;
@@ -241,8 +242,7 @@ public class LagerView extends ViewPart implements DoubleClickListener, ISaveabl
 	}
 	
 	public void doubleClicked(PersistentObject obj, CommonViewer cv){
-		new ArtikelDetailDialog(getViewSite().getShell(), obj).open();
-		
+		EditEigenartikelUi.executeWithParams(obj);
 	}
 	
 	public void reloadContents(Class clazz){

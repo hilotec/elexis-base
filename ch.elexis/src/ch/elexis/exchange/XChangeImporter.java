@@ -8,7 +8,7 @@
  * Contributors:
  *    G. Weirich - initial implementation
  * 
- * $Id: XChangeImporter.java 5898 2009-12-24 09:21:06Z rgw_ch $
+ * $Id$
  *******************************************************************************/
 
 package ch.elexis.exchange;

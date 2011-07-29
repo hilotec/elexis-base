@@ -23,8 +23,10 @@ import java.io.OutputStreamWriter;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.text.MessageFormat;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Properties;
@@ -55,6 +57,7 @@ import org.jdom.transform.JDOMSource;
 
 import ch.elexis.Hub;
 import ch.elexis.StringConstants;
+import ch.elexis.TarmedRechnung.XMLExporter.VatRateSum.VatRateElement;
 import ch.elexis.artikel_ch.data.Medical;
 import ch.elexis.artikel_ch.data.Medikament;
 import ch.elexis.artikel_ch.data.MedikamentImporter;
@@ -113,6 +116,10 @@ import ch.rgw.tools.XMLTool;
  * 
  */
 public class XMLExporter implements IRnOutputter {
+	// constants to access vat information from the extinfo of the Rechnungssteller
+	public static final String VAT_ISMANDANTVAT = "at.medevit.medelexis.vat_ch/IsMandantVat";
+	public static final String VAT_MANDANTVATNUMBER = "at.medevit.medelexis.vat_ch/MandantVatNumber";
+	
 	public static final String ATTR_REMARK = "remark"; //$NON-NLS-1$
 	public static final String ELEMENT_TIERS_PAYANT = "tiers_payant"; //$NON-NLS-1$
 	public static final String ELEMENT_TIERS_GARANT = "tiers_garant"; //$NON-NLS-1$
@@ -128,6 +135,7 @@ public class XMLExporter implements IRnOutputter {
 	private static final String ATTR_PARTICIPANT_NUMBER = "participant_number"; //$NON-NLS-1$
 	private static final String ATTR_TYPE = "type"; //$NON-NLS-1$
 	private static final String ELEMENT_VAT = "vat"; //$NON-NLS-1$
+	private static final String ELEMENT_VAT_NUMBER = "vat_number"; //$NON-NLS-1$
 	private static final String ATTR_UNIT_TARMED_TT = "unit_tarmed.tt"; //$NON-NLS-1$
 	private static final String ATTR_UNIT_TARMED_MT = "unit_tarmed.mt"; //$NON-NLS-1$
 	private static final String ATTR_DATE_BEGIN = "date_begin"; //$NON-NLS-1$
@@ -350,6 +358,8 @@ public class XMLExporter implements IRnOutputter {
 	public Document doExport(final Rechnung rechnung, final String dest,
 		final IRnOutputter.TYPE type, final boolean doVerify){
 		clear();
+		// create a object for managing vat rates and values on invoice level
+		VatRateSum vatSummer = new VatRateSum();
 		Namespace nsxsi =
 			Namespace.getNamespace("xsi", "http://www.w3.org/2001/XMLSchema-instance"); //$NON-NLS-1$ //$NON-NLS-2$
 		// Namespace
@@ -745,7 +755,7 @@ public class XMLExporter implements IRnOutputter {
 					Money mAmountLocal = new Money(mAL);
 					mAmountLocal.addMoney(mTL);
 					el.setAttribute(ATTR_AMOUNT, XMLTool.moneyToXmlDouble(mAmountLocal)); // 22570
-					el.setAttribute(ATTR_VAT_RATE, "0"); // 22590 //$NON-NLS-1$
+					setVatAttribute(vv, mAmountLocal, el, vatSummer); // 22590 //$NON-NLS-1$
 					el.setAttribute(ATTR_VALIDATE, TARMED_TRUE); // 22620
 					
 					el.setAttribute(ATTR_OBLIGATION, Boolean.toString(TarmedLeistung
@@ -774,7 +784,7 @@ public class XMLExporter implements IRnOutputter {
 					Money mAmountLocal = new Money(preis);
 					mAmountLocal.multiply(zahl);
 					el.setAttribute(ATTR_AMOUNT, XMLTool.moneyToXmlDouble(mAmountLocal)); // 28570
-					el.setAttribute(ATTR_VAT_RATE, StringConstants.ZERO); // 28590
+					setVatAttribute(vv, mAmountLocal, el, vatSummer); // 28590
 					el.setAttribute(ATTR_OBLIGATION, TARMED_TRUE); // 28630
 					el.setAttribute(ATTR_VALIDATE, TARMED_TRUE); // 28620
 					mAnalysen.addMoney(mAmountLocal);
@@ -792,7 +802,7 @@ public class XMLExporter implements IRnOutputter {
 					Money mAmountLocal = new Money(preis);
 					mAmountLocal.multiply(zahl);
 					el.setAttribute(ATTR_AMOUNT, XMLTool.moneyToXmlDouble(mAmountLocal)); // 28570
-					el.setAttribute(ATTR_VAT_RATE, "0"); // 28590 //$NON-NLS-1$
+					setVatAttribute(vv, mAmountLocal, el, vatSummer); // 28590 //$NON-NLS-1$
 					el.setAttribute(ATTR_OBLIGATION, TARMED_TRUE); // 28630
 					el.setAttribute(ATTR_VALIDATE, TARMED_TRUE); // 28620
 					mAnalysen.addMoney(mAmountLocal);
@@ -801,14 +811,17 @@ public class XMLExporter implements IRnOutputter {
 					el = new Element(ELEMENT_RECORD_DRUG, ns);
 					Artikel art = (Artikel) v;
 					double mult = art.getFactor(tt, actFall);
-					// Money preis = vv.getNettoPreis();
+					Money preis = vv.getNettoPreis();
+					Money mAmountLocal = new Money(preis);
 					// new as of 3/2011: Correct handling of package fractions
-					Money preis = vv.getBruttoPreis();
-					preis.multiply(vv.getPrimaryScaleFactor());
-					
+//					Money preis = vv.getBruttoPreis();
+//					preis.multiply(vv.getPrimaryScaleFactor());
+//					
 					double cnt = vv.getSecondaryScaleFactor();
 					if (cnt != 1.0) {
 						zahl *= cnt;
+					} else {
+						mAmountLocal.multiply(zahl);
 					}
 					
 					// end corrections
@@ -817,10 +830,8 @@ public class XMLExporter implements IRnOutputter {
 					el.setAttribute(ATTR_TARIFF_TYPE, "400"); // Pharmacode-basiert //$NON-NLS-1$
 					String pk = ((Artikel) v).getPharmaCode();
 					el.setAttribute(ATTR_CODE, StringTool.pad(StringTool.LEFT, '0', pk, 7));
-					Money mAmountLocal = new Money(preis);
-					mAmountLocal.multiply(zahl);
 					el.setAttribute(ATTR_AMOUNT, XMLTool.moneyToXmlDouble(mAmountLocal));
-					el.setAttribute(ATTR_VAT_RATE, StringConstants.ZERO);
+					setVatAttribute(vv, mAmountLocal, el, vatSummer);
 					String ckzl = art.getExt(MedikamentImporter.KASSENTYP);
 					if (ckzl.equals("1")) {
 						el.setAttribute(ATTR_OBLIGATION, TARMED_TRUE);
@@ -840,7 +851,7 @@ public class XMLExporter implements IRnOutputter {
 					Money mAmountLocal = new Money(preis);
 					mAmountLocal.multiply(zahl);
 					el.setAttribute(ATTR_AMOUNT, XMLTool.moneyToXmlDouble(mAmountLocal));
-					el.setAttribute(ATTR_VAT_RATE, StringConstants.ZERO);
+					setVatAttribute(vv, mAmountLocal, el, vatSummer);
 					el.setAttribute(ATTR_OBLIGATION, TARMED_TRUE);
 					el.setAttribute(ATTR_VALIDATE, TARMED_TRUE);
 					mMigel.addMoney(mAmountLocal);
@@ -856,7 +867,7 @@ public class XMLExporter implements IRnOutputter {
 					Money mAmountLocal = new Money(preis);
 					mAmountLocal.multiply(zahl);
 					el.setAttribute(ATTR_AMOUNT, XMLTool.moneyToXmlDouble(mAmountLocal)); // 28570
-					el.setAttribute(ATTR_VAT_RATE, StringConstants.ZERO); // 28590
+					setVatAttribute(vv, mAmountLocal, el, vatSummer); // 28590
 					el.setAttribute(ATTR_OBLIGATION, TARMED_TRUE); // 28630
 					el.setAttribute(ATTR_VALIDATE, TARMED_TRUE); // 28620
 					el.setAttribute(ATTR_EAN_PROVIDER, TarmedRequirements.getProviderEAN(actFall));
@@ -874,7 +885,7 @@ public class XMLExporter implements IRnOutputter {
 					Money mAmountLocal = new Money(preis);
 					mAmountLocal.multiply(zahl);
 					el.setAttribute(ATTR_AMOUNT, XMLTool.moneyToXmlDouble(mAmountLocal));
-					el.setAttribute(ATTR_VAT_RATE, StringConstants.ZERO);
+					setVatAttribute(vv, mAmountLocal, el, vatSummer);
 					el.setAttribute(ATTR_VALIDATE, TARMED_TRUE);
 					el.setAttribute(ATTR_OBLIGATION, "false"); //$NON-NLS-1$
 					el.setAttribute("external_factor", "1.0"); //$NON-NLS-1$ //$NON-NLS-2$
@@ -918,14 +929,26 @@ public class XMLExporter implements IRnOutputter {
 		balance.setAttribute(ATTR_AMOUNT_MIGEL, XMLTool.moneyToXmlDouble(mMigel)); // 10345
 		balance.setAttribute(ATTR_AMOUNT_OBLIGATIONS, XMLTool.moneyToXmlDouble(mTotal)); // 10352
 		
-		// 10370 ff als stub, solange keine Mwst Pflicht
+		// 10370 Vat on invoice level
 		Element vat = new Element(ELEMENT_VAT, ns);
-		vat.setAttribute(ELEMENT_VAT, StringConstants.FLOAT_ZERO);
-		Element vatrate = new Element(ATTR_VAT_RATE, ns);
-		vatrate.setAttribute(ATTR_VAT_RATE, StringConstants.FLOAT_ZERO);
-		vatrate.setAttribute(ATTR_AMOUNT, XMLTool.moneyToXmlDouble(mDue));
-		vatrate.setAttribute(ELEMENT_VAT, StringConstants.DOUBLE_ZERO);
-		vat.addContent(vatrate);
+
+		String vatNumber = actMandant.getRechnungssteller().getInfoString(VAT_MANDANTVATNUMBER);
+		if(vatNumber != null && vatNumber.length() > 0)
+			vat.setAttribute(ELEMENT_VAT_NUMBER, vatNumber);
+		
+		vat.setAttribute(ELEMENT_VAT, XMLTool.doubleToXmlDouble(vatSummer.sumvat, 2));
+		
+		// 10380 Vat on rate level
+		VatRateElement[] vatValues = vatSummer.rates.values().toArray(new VatRateElement[0]);
+		Arrays.sort(vatValues);
+		for(VatRateElement rate : vatValues) {
+			Element vatrate = new Element(ATTR_VAT_RATE, ns);
+			vatrate.setAttribute(ATTR_VAT_RATE,  XMLTool.doubleToXmlDouble(rate.scale, 2));
+			vatrate.setAttribute(ATTR_AMOUNT, XMLTool.doubleToXmlDouble(rate.sumamount, 2));
+			vatrate.setAttribute(ELEMENT_VAT, XMLTool.doubleToXmlDouble(rate.sumvat, 2));
+			vat.addContent(vatrate);
+		}
+		
 		balance.addContent(vat);
 		invoice.addContent(balance);
 		
@@ -1739,5 +1762,77 @@ public class XMLExporter implements IRnOutputter {
 			}
 			ort = plzOrt;
 		}
+	}
+
+	/**
+	 * Class for keeping track of vat scales and corresponding
+	 * amounts.
+	 * 
+	 * @author thomas
+	 *
+	 */
+	class VatRateSum {
+		class VatRateElement implements Comparable<VatRateElement> {
+			double scale;
+			double sumamount;
+			double sumvat;
+			
+			VatRateElement(double scale) {
+				this.scale = scale;
+				sumamount = 0;
+				sumvat = 0;
+			}
+			
+			void add(double amount) {
+				this.sumamount += amount;
+				sumvat += (amount / (100.0 + scale)) * scale;
+			}
+			
+			public int compareTo(VatRateElement other) {
+				if(scale < other.scale)
+					return -1;
+				else if (scale > other.scale)
+					return 1;
+				else
+					return 0;
+			}
+		}
+		
+		HashMap<Double, VatRateElement> rates = new HashMap<Double, VatRateElement>();
+		double sumvat = 0.0;
+		
+		public void add(double scale, double amount) {
+			VatRateElement element = rates.get(Double.valueOf(scale));
+			if(element == null) {
+				element = new VatRateElement(scale);
+				rates.put(new Double(scale), element);
+			}
+			element.add(amount);
+			sumvat += (amount / (100.0 + scale)) * scale;
+		}
+	}
+	
+	/**
+	 * Set the correct VAT Attribute based on the Verrechent and the info if
+	 * the Rechnungssteller has to pay VAT.
+	 * 
+	 * @param verrechnet
+	 * @param amount 
+	 * @param el
+	 */
+	private void setVatAttribute(Verrechnet verrechnet, Money amount, Element el, VatRateSum vatsum) {
+		
+		Boolean isVat = (Boolean) verrechnet.getKons().getMandant()
+			.getRechnungssteller().getInfoElement(VAT_ISMANDANTVAT);
+		
+		double value = 0.0;		
+		if(isVat) {
+			String vatScale = verrechnet.getDetail(Verrechnet.VATSCALE);
+			if(vatScale != null && vatScale.length() > 0)
+				value = Double.parseDouble(vatScale);
+		}
+		el.setAttribute(ATTR_VAT_RATE, Double.toString(value)); //$NON-NLS-1$
+		
+		vatsum.add(value, amount.doubleValue());
 	}
 }

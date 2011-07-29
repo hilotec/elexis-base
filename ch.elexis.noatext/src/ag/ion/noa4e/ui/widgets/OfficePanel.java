@@ -620,9 +620,11 @@ public class OfficePanel extends Composite {
 	 */
 	private URL convertToURL(String documentPath) throws CoreException{
 		try {
+			/*
 			if (Debug.DEBUG) { //$NON-NLS-1$ //$NON-NLS-2$
 				return new URL("file:/" + documentPath); //$NON-NLS-1$
 			}
+			*/
 			if (System.getProperty("os.name").toLowerCase().indexOf("windows") != -1) { //$NON-NLS-1$ //$NON-NLS-2$
 				return new URL("file://///" + documentPath); //$NON-NLS-1$
 			}

@@ -8,7 +8,7 @@
  * Contributors:
  *    G. Weirich - initial implementation
  * 
- * $Id: TarmedLeistung.java 6142 2010-02-14 16:37:56Z rgw_ch $
+ * $Id$
  *******************************************************************************/
 
 package ch.elexis.data;
@@ -516,5 +516,11 @@ public class TarmedLeistung extends VerrechenbarAdapter {
 			}
 		}
 		return "none";
+	}
+
+	@Override
+	public VatInfo getVatInfo(){
+		// TarmedLeistung is a treatment per default
+		return VatInfo.VAT_CH_ISTREATMENT;
 	}
 }

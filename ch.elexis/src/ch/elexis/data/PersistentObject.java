@@ -246,7 +246,7 @@ public abstract class PersistentObject implements ISelectable {
 					System.exit(-6);
 				}
 			} catch (Exception ex) {
-				log.log("can't create test database", Log.FATALS);
+				log.log(ex, "can't create test database", Log.FATALS);
 				System.exit(-7);
 			}
 		}

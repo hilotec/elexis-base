@@ -8,15 +8,22 @@
  * Contributors:
  *    G. Weirich - initial implementation
  *    
- * $Id: Verrechnet.java 5317 2009-05-24 15:00:37Z rgw_ch $
+ * $Id$
  *******************************************************************************/
 
 package ch.elexis.data;
 
+import java.util.ArrayList;
 import java.util.Hashtable;
+import java.util.List;
+
+import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IConfigurationElement;
 
 import ch.elexis.Hub;
+import ch.elexis.util.Extensions;
 import ch.elexis.util.Log;
+import ch.rgw.tools.ExHandler;
 import ch.rgw.tools.Money;
 import ch.rgw.tools.TimeTool;
 
@@ -48,10 +55,29 @@ public class Verrechnet extends PersistentObject {
 	public static final String CLASS = "Klasse";
 	public static final String TABLENAME = "LEISTUNGEN";
 	
+	public static final String VATSCALE = "vat_scale";
+	
+	// keep a list of all ch.elexis.VerrechnetAdjuster extensions
+	private static ArrayList<IVerrechnetAdjuster> adjusters = new ArrayList<IVerrechnetAdjuster>();
+	
 	static {
 		addMapping(TABLENAME, "Konsultation=Behandlung", LEISTG_TXT, LEISTG_CODE, CLASS, COUNT,
 			COST_BUYING, SCALE_TP_SELLING, SCALE_SELLING, PRICE_SELLING, SCALE, SCALE2,
 			"ExtInfo=Detail");
+
+		List<IConfigurationElement> adjustersConfigurations = Extensions.getExtensions(IVerrechnetAdjuster.EXTENSIONPOINTID);
+		for(IConfigurationElement elem : adjustersConfigurations) {
+			Object o;
+			try {
+				o = elem.createExecutableExtension("class");
+				if (o instanceof IVerrechnetAdjuster) {
+					adjusters.add((IVerrechnetAdjuster) o);
+				}
+			} catch (CoreException e) {
+				// just log the failed instantiation
+				ExHandler.handle(e);
+			}
+		}
 	}
 	
 	public Verrechnet(final IVerrechenbar iv, final Konsultation kons, final int zahl){
@@ -71,6 +97,10 @@ public class Verrechnet extends PersistentObject {
 		});
 		if (iv instanceof Artikel) {
 			((Artikel) iv).einzelAbgabe(1);
+		}
+		// call the adjusters
+		for(IVerrechnetAdjuster adjuster : adjusters) {
+			adjuster.adjust(this);
 		}
 	}
 	
@@ -195,6 +225,12 @@ public class Verrechnet extends PersistentObject {
 		Money brutto = getBruttoPreis();
 		brutto.multiply(getPrimaryScaleFactor());
 		brutto.multiply(getSecondaryScaleFactor());
+		
+		// call the adjusters
+		for(IVerrechnetAdjuster adjuster : adjusters) {
+			adjuster.adjustGetNettoPreis(this, brutto);
+		}
+		
 		return brutto;
 	}
 	
