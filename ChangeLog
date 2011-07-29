@@ -1,6 +1,17 @@
 Offene Probleme
 - Tests von agenda, arzttarife von trunk sind noch nicht migriert
 
+Changelog für 2.1.6.rc0
+e712d52a9a37: 2011-07-28: thomashu: Ticket: #412 - fix for loosing parts of Konsultation text, by additional saving on change of Konsultation
+a2231455b59c: 2011-07-28: Niklaus Giger: Fixed problem with LoginNews
+85c1fcfcae87: 2011-07-27: rgw: Login News
+f81a52719e94: 2011-07-25: rgw@iMac: add eigenartikel to mac build
+dcd829ea01cd: 2011-07-25: rgw@iMac: remove old resources
+ea112637965e: 2011-07-25: rgw@iMac: updated mac resources
+9108cfa615c4: 2011-07-25: rgw@iMac: include eigenartikel in base package
+1a274114125a: 2011-07-15: mdescher: medelexis.xml fix
+c3669206271f: 2011-07-13: mdescher: Simple patch: Patient.loadByPatientID() method
+
 Changelog für 2.1.5.1
 
 320a9d979602: 2011-06-15: mdescher: Ticket #470: Allgemeines Refaktoring: Auslagerung der BezugsKontaktAuswahl
