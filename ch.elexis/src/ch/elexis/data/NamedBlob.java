@@ -8,7 +8,7 @@
  * Contributors:
  *    G. Weirich - initial implementation
  *    
- *  $Id: NamedBlob.java 5721 2009-09-14 08:38:34Z michael_imhof $
+ *  $Id$
  *******************************************************************************/
 package ch.elexis.data;
 

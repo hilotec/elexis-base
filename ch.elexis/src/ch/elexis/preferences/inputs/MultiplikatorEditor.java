@@ -8,7 +8,7 @@
  * Contributors:
  *    G. Weirich - initial implementation
  *    
- *  $Id: MultiplikatorEditor.java 2832 2007-07-18 15:05:58Z rgw_ch $
+ *  $Id$
  *******************************************************************************/
 package ch.elexis.preferences.inputs;
 

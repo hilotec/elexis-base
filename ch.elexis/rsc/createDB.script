@@ -439,8 +439,8 @@ CREATE TABLE LABORITEMS(
 	typ			CHAR(1),
 	Gruppe		VARCHAR(25),
 	prio		CHAR(3),
-	billingcode	VARCHAR(20)						# Code for automatic billing (from e.g EAL2009)
-	
+	billingcode	VARCHAR(20),						# Code for automatic billing (from e.g EAL2009)
+	export		VARCHAR(100)
 );
 	
 CREATE INDEX labit1 on LABORITEMS(kuerzel);
@@ -615,6 +615,6 @@ CREATE TABLE DBIMAGE (
 CREATE INDEX DBIMAGE1 on DBIMAGE(Title);  
             
 
-INSERT INTO CONFIG (param,wert) VALUES ('dbversion','1.8.8');
-INSERT INTO CONFIG (param,wert) VALUES ('ElexisVersion','2.1.0');
+INSERT INTO CONFIG (param,wert) VALUES ('dbversion','1.8.10');
+INSERT INTO CONFIG (param,wert) VALUES ('ElexisVersion','2.1.5');
 

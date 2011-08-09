@@ -8,7 +8,7 @@
  * Contributors:
  *    G. Weirich - initial implementation
  *    
- *  $Id: SettingsPreferenceStore.java 5856 2009-12-03 12:23:18Z michael_imhof $
+ *  $Id$
  *******************************************************************************/
 package ch.elexis.preferences;
 

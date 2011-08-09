@@ -8,7 +8,7 @@
  * Contributors:
  *    G. Weirich - initial implementation
  *    
- *  $Id: ExternalLink.java 6242 2010-03-20 12:29:52Z rgw_ch $
+ *  $Id$
  *******************************************************************************/
 package ch.elexis.text;
 

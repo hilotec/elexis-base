@@ -9,7 +9,7 @@
  *    M. Imhof - initial implementation
  *    G. Weirich - added Anschrift
  * 
- * $Id: KontaktErfassenDialog.java 6238 2010-03-19 15:50:41Z rgw_ch $
+ * $Id$
  *******************************************************************************/
 package ch.elexis.dialogs;
 

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2006-2010, G. Weirich, Daniel Lutz and Elexis
+ * Copyright (c) 2006-2011, G. Weirich, Daniel Lutz and Elexis
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -8,7 +8,7 @@
  * Contributors:
  *    Daniel Lutz - initial implementation, based on RechnungsDrucker
  *
- * $Id: KGDrucker.java 6043 2010-02-01 14:34:06Z rgw_ch $
+ * $Id$
  *******************************************************************************/
 
 package ch.elexis.util;
@@ -52,10 +52,9 @@ public class KGDrucker {
 						// gw 23.7.2006 an neues Selectionmodell angepasst
 						Patient actPatient = ElexisEventDispatcher.getSelectedPatient();
 						if (kgp.doPrint(actPatient, monitor) == false) {
-							ErrorDialog
-								.openError(
-									null,
-									Messages.getString("KGDrucker.errorPrinting"), Messages.getString("KGDrucker.couldntprint") + patient.getLabel() + Messages.getString("KGDrucker.emr"), null); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+							ErrorDialog.openError(
+								null,
+								Messages.getString("KGDrucker.errorPrinting"), Messages.getString("KGDrucker.couldntprint") + patient.getLabel() + Messages.getString("KGDrucker.emr"), null); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 							
 						}
 						
@@ -67,9 +66,9 @@ public class KGDrucker {
 			
 		} catch (Exception ex) {
 			ElexisStatus status =
-				new ElexisStatus(ElexisStatus.ERROR, Hub.PLUGIN_ID, ElexisStatus.CODE_NONE, Messages
-					.getString("KGDrucker.errorPrinting")
-					+ ": " + Messages.getString("KGDrucker.couldntShow"), ex);
+				new ElexisStatus(ElexisStatus.ERROR, Hub.PLUGIN_ID, ElexisStatus.CODE_NONE,
+					Messages.getString("KGDrucker.errorPrinting") + ": "
+						+ Messages.getString("KGDrucker.couldntShow"), ex);
 			StatusManager.getManager().handle(status);
 		}
 	}

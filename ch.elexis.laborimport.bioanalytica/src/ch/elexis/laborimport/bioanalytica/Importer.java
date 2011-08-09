@@ -1,7 +1,7 @@
 /**
  * (c) 2007-2010 by G. Weirich
  * All rights reserved
- * $Id: Importer.java 116 2007-06-07 07:06:44Z gerry $
+ * $Id$
  * 
  * Adapted from Viollier to Bioanalytica by Daniel Lutz <danlutz@watz.ch>
  * Important changes:

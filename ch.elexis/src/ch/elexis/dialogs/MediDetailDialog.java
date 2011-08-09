@@ -8,7 +8,7 @@
  * Contributors:
  *    G. Weirich - initial implementation
  *    
- *  $Id: MediDetailDialog.java 5328 2009-05-30 06:53:39Z rgw_ch $
+ *  $Id$
  *******************************************************************************/
 
 package ch.elexis.dialogs;

@@ -8,7 +8,7 @@
  * Contributors:
  *    G. Weirich - initial implementation
  * 
- *  $Id: ACLContributor.java 5905 2009-12-26 17:29:29Z rgw_ch $
+ *  $Id$
  *******************************************************************************/
 package ch.elexis.admin;
 

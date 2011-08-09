@@ -18,7 +18,7 @@
  * - Re-Adapted to Viollier
  * - Added -allInOne option from OpenMedical
  * 
- * $Id: Importer.java 6046 2010-02-01 18:23:57Z rgw_ch $
+ * $Id$
  */
 
 package ch.elexis.laborimport.viollier;

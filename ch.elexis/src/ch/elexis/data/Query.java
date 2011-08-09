@@ -9,7 +9,7 @@
  *    G. Weirich - initial implementation
  *    D. Lutz    - case insenitive add()
  * 
- * $Id: Query.java 6345 2010-05-09 16:35:55Z rgw_ch $
+ * $Id$
  *******************************************************************************/
 
 package ch.elexis.data;
