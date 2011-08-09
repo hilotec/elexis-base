@@ -61,7 +61,7 @@
 		
 -->
 <project name="elexis" default="all">
-	<property name="version" value="2.1.5.x" />
+	<property name="version" value="2.1.5.3" />
 	<property name="javatarget" value="1.6" />
 	<property name="debug" value="true" />
 	<property name="optimize" value="off" />
@@ -520,8 +520,8 @@ osgi.bundles=org.eclipse.equinox.common@2:start,org.eclipse.update.configurator@
 			<arg value="${texifyArgs}" />
 			<arg value="elexis.tex" />
 		</exec>
-		<copy file="${repositories}/elexis-base/dokumentation/elexis.pdf" todir="${dist}/doc" />
-		<copy file="${repositories}/elexis-base/dokumentation/elexis.pdf" todir="${dist}" />
+		<copy file="${repositories}/elexis-base/dokumentation/elexis.pdf" todir="${dist}/doc" failonerror="false"/>
+		<copy file="${repositories}/elexis-base/dokumentation/elexis.pdf" todir="${dist}" failonerror="false"/>
 	</target>
 
 	<target name="doc_fr" unless="skip_texify" depends="initialize">
