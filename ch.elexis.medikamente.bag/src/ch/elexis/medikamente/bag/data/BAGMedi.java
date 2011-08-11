@@ -70,14 +70,14 @@ public class BAGMedi extends Artikel implements Comparable<BAGMedi> {
 		
 		Xid.localRegisterXIDDomainIfNotExists(DOMAIN_PHARMACODE, "Pharmacode",
 			Xid.ASSIGNMENT_REGIONAL);
-		String v =
-			getConnection().queryString(
-				"SELECT substance FROM " + JOINTTABLE + " WHERE ID='VERSION';");
 		
-		if (v == null) {
+		if (!tableExists(JOINTTABLE)) {
 			createOrModifyTable(jointDB);
 			createOrModifyTable(extDB);
 		} else {
+			String v =
+					getConnection().queryString(
+						"SELECT substance FROM " + JOINTTABLE + " WHERE ID='VERSION';");			
 			VersionInfo vi = new VersionInfo(v);
 			if (vi.isOlder(VERSION)) {
 				if (vi.isOlder("0.1.1")) {
