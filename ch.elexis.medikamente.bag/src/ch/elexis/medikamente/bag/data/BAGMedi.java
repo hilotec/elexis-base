@@ -8,7 +8,7 @@
  * Contributors:
  *    G. Weirich - initial implementation
  *    
- *  $Id: BAGMedi.java 5187 2009-02-24 15:47:44Z rgw_ch $
+ *  $Id$
  *******************************************************************************/
 package ch.elexis.medikamente.bag.data;
 
