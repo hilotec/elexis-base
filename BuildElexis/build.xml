@@ -264,7 +264,7 @@ osgi.bundles=org.eclipse.equinox.common@2:start,org.eclipse.update.configurator@
 			</fileset>
 		</copy>
 		<!-- do some magic stuff to find all the files to include -->
-		<listDependencies eclipse="${platform-runtime}" dest="${dist}/plugins" repositories="${repositories}" exclude="${skipPlugins},TestElexis,TestElexisUI" />
+		<listDependencies eclipse="${platform-runtime}" dest="${dist}/plugins" repositories="${repositories}" exclude="${skipPlugins},TestElexis,TestElexisUI" report="${output}" />
 		<antcall target="compile-plugins" inheritrefs="true">
 			<param name="buildlist" value="${buildlist}" />
 		</antcall>
@@ -520,8 +520,8 @@ osgi.bundles=org.eclipse.equinox.common@2:start,org.eclipse.update.configurator@
 			<arg value="${texifyArgs}" />
 			<arg value="elexis.tex" />
 		</exec>
-		<copy file="${repositories}/elexis-base/dokumentation/elexis.pdf" todir="${dist}/doc" failonerror="false"/>
-		<copy file="${repositories}/elexis-base/dokumentation/elexis.pdf" todir="${dist}" failonerror="false"/>
+		<copy file="${repositories}/elexis-base/dokumentation/elexis.pdf" todir="${dist}/doc" failonerror="false" />
+		<copy file="${repositories}/elexis-base/dokumentation/elexis.pdf" todir="${dist}" failonerror="false" />
 	</target>
 
 	<target name="doc_fr" unless="skip_texify" depends="initialize">
