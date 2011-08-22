@@ -114,9 +114,8 @@ public class KonsDetailView extends ViewPart implements ElexisEventListener, IAc
 	private SashForm sash;
 	
 	private final ElexisEventListenerImpl eeli_pat = new ElexisEventListenerImpl(Patient.class) {
-		
 		@Override
-		public void runInUi(ElexisEvent ev){
+		public void catchElexisEvent(final ElexisEvent ev){
 			Patient pat = (Patient) ev.getObject();
 			if (pat != null) {
 				if (!pat.equals(actPat)) {
@@ -136,12 +135,9 @@ public class KonsDetailView extends ViewPart implements ElexisEventListener, IAc
 							ElexisEventDispatcher.fireSelectionEvent(b);
 						}
 					}
-					
 				}
 			}
-			
 		}
-		
 	};
 	
 	private final ElexisEventListenerImpl eeli_user =
@@ -372,9 +368,12 @@ public class KonsDetailView extends ViewPart implements ElexisEventListener, IAc
 	 * Aktuelle Konsultation setzen.
 	 */
 	private void setKons(final Konsultation b){
+		
+		if(actKons != null && actKons != b) {
+			actKons.updateEintrag(text.getContentsAsXML(), false);
+		}
+		
 		if (b != null) {
-			if(actKons != null)
-				actKons.updateEintrag(text.getContentsAsXML(), false);
 			/*
 			 * System.out.println("setKons: " + b.getLabel()); Fall fall = b.getFall();
 			 * System.out.println(fall.getLabel()); Patient oat = fall.getPatient();
@@ -609,7 +608,7 @@ public class KonsDetailView extends ViewPart implements ElexisEventListener, IAc
 	 * Konsultation event
 	 */
 	public void catchElexisEvent(final ElexisEvent ev){
-		Desk.asyncExec(new Runnable() {
+		Desk.syncExec(new Runnable() {
 			public void run(){
 				switch (ev.getType()) {
 				case ElexisEvent.EVENT_DELETE:
