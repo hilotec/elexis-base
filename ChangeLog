@@ -1,6 +1,15 @@
 Offene Probleme
 - Tests von agenda, arzttarife von trunk sind noch nicht migriert
 
+Changelog für 2.1.5.3
+af4f74a0d7a4: 2011-08-25: thomashu: Ticket: #412 - added check if text changed before trying to save the Konsultation
+                          rfw@iMac: Various cleanup for fixing build/konfigurator issues
+29017aba8fae: 2011-08-14: mdescher: Ticket #562: Multiple memory leaks in PersistentObject
+a6b504bd6788: 2011-08-04: thomashu: Ticket: #412 - fix for saving text into wrong Konsultation, introduced by previous fix (changeset 4927 e712d52a9a37)
+61c7572d1a2e: 2011-08-11: thomashu: Ticket: #560 - ch.elexis.medikamente.bag, fixed db table initialization with elexis version 2.1.5, and set version to 2.0.4
+499fd956ab6a: 2011-07-28: thomashu: Ticket: #412 - fix for loosing parts of Konsultation text, by additional saving on change of Konsultation
+5a2a3a739ae9: 2011-08-09: rgw@iMac: correct createDB.sql to version 1.8.10 apply formatterprofile to some files
+
 Changelog für 2.1.5.2
 007be95c54be: 2011-07-25: rgw@iMac: add eigenartikel to mac build
 d57dbf10fd1b: 2011-07-25: rgw@iMac: include eigenartikel in base package
