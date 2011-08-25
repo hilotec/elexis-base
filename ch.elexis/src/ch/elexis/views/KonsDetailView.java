@@ -369,7 +369,7 @@ public class KonsDetailView extends ViewPart implements ElexisEventListener, IAc
 	 */
 	private void setKons(final Konsultation b){
 		
-		if(actKons != null && actKons != b) {
+		if(actKons != null && actKons != b && text.isDirty()) {
 			actKons.updateEintrag(text.getContentsAsXML(), false);
 		}
 		
