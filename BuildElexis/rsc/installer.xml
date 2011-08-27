@@ -1,13 +1,10 @@
 <?xml version="1.0" encoding="iso-8859-1" standalone="yes" ?>
-	<!--
-		* Copyright (c) 2010, Medelexis AG, Baden * This file is intellectual
-		property of Medelexis AG * All rights reserved. * Do not copy or use
-		outside Medelexis AG scope * Contributors: * G. Weirich - initial
-		implementation * * $Id: installer.xml 1048 2010-03-18 06:06:04Z gerry
-		$
-	-->
+<!-- * Copyright (c) 2010, Medelexis AG, Baden * This file is intellectual 
+	property of Medelexis AG * All rights reserved. * Do not copy or use outside 
+	Medelexis AG scope * Contributors: * G. Weirich - initial implementation 
+	* * $Id: installer.xml 1048 2010-03-18 06:06:04Z gerry $ -->
 
-	<!-- This creates the izPack installer package -->
+<!-- This creates the izPack installer package -->
 <installation version="1.0">
 	<info>
 		<appname>Elexis</appname>
@@ -26,22 +23,25 @@
 		<langpack iso3="fra" />
 	</locale>
 	<variables>
-		<variable name="appversion" value="@{version}"/>
-		<variable name="UserPathPanelVariable" value="$SYSTEM_user_home/elexis"/>
-		
+		<variable name="appversion" value="@{version}" />
+		<variable name="UserPathPanelVariable" value="$SYSTEM_user_home/elexis" />
+
 	</variables>
 	<native type="izpack" name="ShellLink.dll" />
 
 	<resources>
 		<res id="HTMLLicencePanel.licence" src="@{dist}/license.html" />
 		<res id="HTMLInfoPanel.info" src="@{dist}/info.html" />
-		<res id="medelexis-logo.png" src="@{base}/repositories/elexis-base/BuildElexis/rsc/elexis-logo.png" />
-		<res id="Win_shortcutSpec.xml" src="@{base}/repositories/elexis-base/BuildElexis/rsc/Shortcuts_Windows.xml" />
-		<res id="Unix_shortcutSpec.xml" src="@{base}/repositories/elexis-base/BuildElexis/rsc/Shortcuts_Linux.xml" />
+		<res id="medelexis-logo.png"
+			src="@{base}/repositories/elexis-base/BuildElexis/rsc/elexis-logo.png" />
+		<res id="Win_shortcutSpec.xml"
+			src="@{base}/repositories/elexis-base/BuildElexis/rsc/Shortcuts_Windows.xml" />
+		<res id="Unix_shortcutSpec.xml"
+			src="@{base}/repositories/elexis-base/BuildElexis/rsc/Shortcuts_Linux.xml" />
 	</resources>
 
 	<panels>
-		<!--   panel classname="HelloPanel"/ -->
+		<!-- panel classname="HelloPanel"/ -->
 		<panel classname="HTMLInfoPanel" />
 		<panel classname="HTMLLicencePanel" />
 		<panel classname="TargetPanel" />
@@ -55,38 +55,41 @@
 		<pack name="Elexis-Kern" required="yes">
 			<description>Elexis-Hauptprogramm</description>
 			<fileset dir="@{dist}" targetdir="$INSTALL_PATH">
-				<include name="*"/>
-				<include name="configuration/**"/>
-				<include name="plugins/ch.elexis_*/**"/>
-				<include name="plugins/ch.rgw.utility_*/**"/>
-				<include name="plugins/ch.elexis.eigenartikel_*/**"/>
-				<include name="plugins/ch.elexis.mysql.connector_*/**"/>
-				<include name="plugins/ch.elexis.h2.connector_*/**"/>
-				<include name="plugins/ch.elexis.postgresql.connector_*/**"/>
-				<include name="plugins/ch.elexis.importer.div_*/**"/>
-				<include name="plugins/ch.elexis.scripting.beanshell_*/**"/>
-				<include name="plugins/org.eclipse*"/>
-				<include name="plugins/org.eclipse*/**"/>
-				<include name="plugins/org.apache*"/>
-				<include name="plugins/com.ibm*"/>
-				<include name="plugins/javax*"/>
+				<include name="*" />
+				<include name="configuration/**" />
+				<include name="plugins/ch.elexis_*/**" />
+				<include name="plugins/ch.rgw.utility_*/**" />
+				<include name="plugins/ch.elexis.eigenartikel_*/**" />
+				<include name="plugins/ch.elexis.mysql.connector_*/**" />
+				<include name="plugins/ch.elexis.h2.connector_*/**" />
+				<include name="plugins/ch.elexis.postgresql.connector_*/**" />
+				<include name="plugins/ch.elexis.importer.div_*/**" />
+				<include name="plugins/ch.elexis.scripting.beanshell_*/**" />
+				<include name="plugins/at.medevit.elexis.dbcheck_*/**" />
+				<include name="plugins/org.eclipse*" />
+				<include name="plugins/org.eclipse*/**" />
+				<include name="plugins/org.apache*" />
+				<include name="plugins/com.ibm*" />
+				<include name="plugins/javax*" />
 			</fileset>
-			<executable os="linux" targetfile="$INSTALL_PATH/elexis" keep="true"/>
+			<executable os="linux" targetfile="$INSTALL_PATH/elexis"
+				keep="true" />
 		</pack>
 		<pack name="Schweiz (deutsch)" required="no">
 			<description>Abrechnungs- und Diagnosesysteme Schweiz</description>
 			<fileset dir="@{dist}" targetdir="$INSTALL_PATH">
-				<include name="plugins/ch.elexis.arzttarife_ch_*/**"/>
-				<include name="plugins/ch.elexis.ebanking_ch_*/**"/>
-				<include name="plugins/ch.elexis.diagnosecodes_ch_*/**"/>
-				<include name="plugins/ch.elexis.labortarif.ch2009_*/**"/>
-				<include name="plugins/ch.elexis.artikel_ch_*/**"/>
-			</fileset>			
+				<include name="plugins/ch.elexis.arzttarife_ch_*/**" />
+				<include name="plugins/ch.elexis.ebanking_ch_*/**" />
+				<include name="plugins/ch.elexis.diagnosecodes_ch_*/**" />
+				<include name="plugins/ch.elexis.labortarif.ch2009_*/**" />
+				<include name="plugins/ch.elexis.artikel_ch_*/**" />
+			</fileset>
 		</pack>
 		<pack name="OpenOffice-2.0-Anbindung" required="no">
-		<description>Anbindung von OpenOffice.org 2.0 (nur Windows und KDE/XFCE)</description>
+			<description>Anbindung von OpenOffice.org 2.0 (nur Windows und
+				KDE/XFCE)</description>
 			<fileset dir="@{dist}" targetdir="$INSTALL_PATH">
-				<include name="plugins/ch.elexis.noatext_*/**"/>
+				<include name="plugins/ch.elexis.noatext_*/**" />
 			</fileset>
 		</pack>
 	</packs>
