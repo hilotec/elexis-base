@@ -33,11 +33,11 @@
 		<res id="HTMLLicencePanel.licence" src="@{dist}/license.html" />
 		<res id="HTMLInfoPanel.info" src="@{dist}/info.html" />
 		<res id="medelexis-logo.png"
-			src="@{base}/repositories/elexis-base/BuildElexis/rsc/elexis-logo.png" />
+			src="@{repositories}/elexis-base/BuildElexis/rsc/elexis-logo.png" />
 		<res id="Win_shortcutSpec.xml"
-			src="@{base}/repositories/elexis-base/BuildElexis/rsc/Shortcuts_Windows.xml" />
+			src="@{repositories}/elexis-base/BuildElexis/rsc/Shortcuts_Windows.xml" />
 		<res id="Unix_shortcutSpec.xml"
-			src="@{base}/repositories/elexis-base/BuildElexis/rsc/Shortcuts_Linux.xml" />
+			src="@{repositories}/elexis-base/BuildElexis/rsc/Shortcuts_Linux.xml" />
 	</resources>
 
 	<panels>
