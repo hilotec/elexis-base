@@ -8,7 +8,7 @@
  * Contributors:
  *    G. Weirich - initial implementation
  * 
- *    $Id$
+ *    $Id: PersistentObject.java 29017aba8fae 2011/08/14 09:49:32 mdescher $
  *******************************************************************************/
 
 package ch.elexis.data;
@@ -37,6 +37,7 @@ import java.util.Hashtable;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.logging.Level;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
@@ -135,6 +136,7 @@ public abstract class PersistentObject implements ISelectable {
 	private static int MAX_INT_LENGTH = 10;
 	
 	private static JdbcLink j = null;
+	private static JdbcLink testJdbcLink = null;
 	protected static Log log = Log.get("PersistentObject");
 	private String id;
 	private static Hashtable<String, String> mapping;
@@ -145,7 +147,8 @@ public abstract class PersistentObject implements ISelectable {
 	protected static int default_lifetime;
 	private static boolean showDeleted = false;
 	private static boolean runningAsTest = false;
-	private static String testDB = null;
+	private static String dbUser;
+	private static String dbPw;
 	
 	static {
 		mapping = new Hashtable<String, String>();
@@ -172,11 +175,25 @@ public abstract class PersistentObject implements ISelectable {
 	};
 	
 	/**
-	 * Connect to a database. In the first place, the method checks if there is a demoDB in the
-	 * Elexis base directory. If found, only this database will be used. If not, connection
-	 * parameters are taken from the provided Settings. If there ist no database found, it will be
-	 * created newly, using the createDB-Script. After successful connection, the global Settings
-	 * (Hub.globalCfg) are linked to the database.
+	 * Connect to a database.
+	 * 
+	 * In the first place, the method checks if there is a demoDB in the Elexis base directory. If
+	 * found, only this database will be used. If not, connection parameters are taken from the
+	 * provided Settings. If there ist no database found, it will be created newly, using the
+	 * createDB-Script. After successful connection, the global Settings (Hub.globalCfg) are linked
+	 * to the database.
+	 * 
+	 * For automated testing the following rules apply:
+	 * 
+	 * The methods check whether the properties ch.elexis.* are set. If set, Elexis will open the
+	 * corresponding database. E.g -Dch.elexis.username=test -Dch.elexis.password=test
+	 * -Dch.elexis.dbUser=elexis -Dch.elexis.dbPw=elexisTest -Dch.elexis.dbFlavor=mysql
+	 * -Dch.elexis.dbSpec=jdbc:mysql://jenkins-service:3306/miniDB
+	 * 
+	 * If the property elexis-run-mode is set to RunFromScratch then the connected database will be
+	 * wiped out and initialized with default values for the mandant (007, topsecret). For mysql and
+	 * postgresql this will only work if the database is empty! Therefore you mus call something
+	 * like ""drop database miniDB; create dabase miniDB;" before starting Elexis.
 	 * 
 	 * @return true on success
 	 * 
@@ -188,11 +205,18 @@ public abstract class PersistentObject implements ISelectable {
 	 * @return true für ok, false wenn keine Verbindung hergestellt werden konnte.
 	 */
 	public static boolean connect(final Settings cfg, final Shell loginshell){
+		dbUser = System.getProperty("ch.elexis.dbUser");
+		dbPw = System.getProperty("ch.elexis.dbPw");
+		String dbFlavor = System.getProperty("ch.elexis.dbFlavor");
+		String dbSpec = System.getProperty("ch.elexis.dbSpec");
+		if ("RunFromScratch".equals(System.getProperty("elexis-run-mode"))) {
+			runningAsTest = true;
+		}
 		File base = new File(Hub.getBasePath());
 		File demo = new File(base.getParentFile().getParent() + "/demoDB");
-		log.log("Verzeichnis Demo-Datenbank: " + demo.getAbsolutePath(), Log.DEBUGMSG);
+		log.log("Verzeichnis Demo-Datenbank: " + demo.getAbsolutePath(), Log.INFOS);
 		if (demo.exists() && demo.isDirectory()) {
-			j = JdbcLink.createInProcHsqlDBLink(demo.getAbsolutePath() + "/db");
+			j = JdbcLink.createH2Link(demo.getAbsolutePath() + File.separator + "db");
 			try {
 				getConnection().connect("sa", StringTool.leer);
 				return connect(getConnection());
@@ -203,43 +227,43 @@ public abstract class PersistentObject implements ISelectable {
 						+ " Fehler mit Demo-Datenbank: Es wurde zwar ein demoDB-Verzeichnis gefunden, aber dort ist keine verwendbare Datenbank");
 				throw new PersistenceException(status);
 			}
-		} else if ("SWTBot".equals(System.getProperty("elexis-run-mode"))) {
-			String template = System.getProperty("SWTBot-DBTemplate");
-			File dbDir = new File(Hub.getTempDir(), "Elexis-SWTBot");
-			if (template == null || (!new File(template).isDirectory())) {
-				log.log("No template directory for Test database set (Property SWTBot-DBTemplate)",
-					Log.FATALS);
-				System.exit(-4);
-			}
-			try {
-				if (dbDir.exists()) {
-					FileTool.deltree(dbDir.getAbsolutePath());
-				}
-				FileTool.copyDirectory(new File(template), dbDir);
-				j = JdbcLink.createH2Link(new File(dbDir, "h2db").getAbsolutePath());
+		} else if (dbFlavor != null && dbFlavor.length() >= 2 && dbSpec != null
+			&& dbSpec.length() > 5 && dbUser != null && dbPw != null) {
+			log.log("Using " + dbFlavor + " " + dbSpec + " " + dbUser, Log.INFOS);
+			String driver;
+			if (dbFlavor.equalsIgnoreCase("mysql"))
+				driver = "com.mysql.jdbc.Driver";
+			else if (dbFlavor.equalsIgnoreCase("postgresql"))
+				driver = "org.postgresql.Driver";
+			else if (dbFlavor.equalsIgnoreCase("h2"))
+				driver = "org.h2.Driver";
+			else
+				driver = "invalid";
+			if (!driver.equalsIgnoreCase("invalid")) {
 				try {
-					runningAsTest = true;
-					getConnection().connect("sa", StringTool.leer);
-					return connect(getConnection());
-				} catch (JdbcLinkException je) {
-					ElexisStatus status = translateJdbcException(je);
-					status.setMessage(status.getMessage()
-						+ " Konnte keine Verbindung zur Test_Database herstellen");
-					status.setLogLevel(ElexisStatus.LOG_FATALS);
-					throw new PersistenceException(status);
+					j = new JdbcLink(driver, dbSpec, dbFlavor);
+					if (getConnection().connect(dbUser, dbPw)) {
+						testJdbcLink = j;
+						return connect(getConnection());
+					} else {
+						log.log("can't connect to test database" + dbSpec, Log.FATALS);
+						System.exit(-6);
+					}
+				} catch (Exception ex) {
+					log.log(ex, "can't connect to test database" + dbSpec, Log.FATALS);
+					System.exit(-7);
 				}
-				
-			} catch (IOException ex) {
-				ExHandler.handle(ex);
-				System.exit(-5);
 			}
-		} else if ("RunFromScratch".equals(System.getProperty("elexis-run-mode"))) {
+			log.log("can't connect to test database. invalid dbFlavor" + dbFlavor, Log.FATALS);
+			System.exit(-7);
+		} else if (runningAsTest) {
 			try {
 				File dbFile = File.createTempFile("elexis", "db");
+				dbUser = "sa";
+				dbPw = StringTool.leer;
 				j = JdbcLink.createH2Link(dbFile.getAbsolutePath());
-				if (getConnection().connect("sa", StringTool.leer)) {
-					runningAsTest = true;
-					testDB = dbFile.getAbsolutePath();
+				if (getConnection().connect(dbUser, dbPw)) {
+					testJdbcLink = j;
 					return connect(getConnection());
 				} else {
 					log.log("can't create test database", Log.FATALS);
@@ -317,6 +341,13 @@ public abstract class PersistentObject implements ISelectable {
 	public static boolean connect(final JdbcLink jd){
 		j = jd;
 		if (tableExists("CONFIG")) {
+			if (runningAsTest) {
+				log.log(
+					"With elexis-run-mode=RunFromScratch and MySQL/postgres you must start with an empty database",
+					Log.ERRORS);
+				System.exit(-8);
+				
+			}
 			Hub.globalCfg = new SqlSettings(getConnection(), "CONFIG");
 			String created = Hub.globalCfg.get("created", null);
 			log.log("Database version " + created, Log.SYNCMARK);
@@ -359,8 +390,11 @@ public abstract class PersistentObject implements ISelectable {
 					Hub.localCfg.flush();
 					disconnect();
 					if (runningAsTest) {
-						JdbcLink jReconnect = JdbcLink.createH2Link(testDB);
-						jReconnect.connect("sa", "");
+						runningAsTest = false; // Avoid recursion!!
+						JdbcLink jReconnect =
+							new JdbcLink(testJdbcLink.getDriverName(),
+								testJdbcLink.getConnectString(), testJdbcLink.DBFlavor);
+						jReconnect.connect(dbUser, dbPw);
 						return connect(jReconnect);
 					}
 					MessageDialog
@@ -632,7 +666,7 @@ public abstract class PersistentObject implements ISelectable {
 	 * wieder aus der Datenbank erstellt werden kann. Dies funktioniert nur innerhalb derselben
 	 * Datenbank.
 	 * 
-	 * @return der code-String, aus dem mit {@link PersistentObjectFactory}.createFromString wieder
+	 * @return der code-String, aus dem mit {@link PersistentObjectFactory} .createFromString wieder
 	 *         das Objekt erstellt werden kann
 	 */
 	public String storeToString(){
@@ -1055,7 +1089,8 @@ public abstract class PersistentObject implements ISelectable {
 				StatusManager.getManager().handle(status, StatusManager.LOG);
 				return mapped;
 			} catch (Exception ex) {
-				// ignore the exceptions calling functions look for MAPPING_ERROR_MARKER
+				// ignore the exceptions calling functions look for
+				// MAPPING_ERROR_MARKER
 				ExHandler.handle(ex);
 				return mapped;
 			}
@@ -2364,8 +2399,9 @@ public abstract class PersistentObject implements ISelectable {
 				// but throwing the exception without handling it apropreately
 				// in the UI code makes it impossible for the status handler
 				// to display a blocking error dialog
-				// (this is executed in a Runnable where Exception handling is not blocking UI
-// thread)
+				// (this is executed in a Runnable where Exception handling is
+				// not blocking UI
+				// thread)
 				StatusManager.getManager().handle(status);
 			} else {
 				status.setLogLevel(ElexisStatus.LOG_FATALS);
@@ -2406,7 +2442,8 @@ public abstract class PersistentObject implements ISelectable {
 			ResultSet rs = dmd.getTables(null, null, "%", onlyTables);
 			if (rs != null) {
 				while (rs.next()) {
-					// DatabaseMetaData#getTables() specifies TABLE_NAME is in column 3
+					// DatabaseMetaData#getTables() specifies TABLE_NAME is in
+					// column 3
 					if (rs.getString(3).equalsIgnoreCase(tableName))
 						nrFounds++;
 				}
@@ -2415,8 +2452,10 @@ public abstract class PersistentObject implements ISelectable {
 			log.log(je, "Fehler beim abrufen der Datenbank Tabellen Information.", Log.ERRORS);
 		}
 		if (nrFounds > 1) {
-			// Dies kann vorkommen, wenn man eine MySQL-datenbank von Windows -> Linuz kopiert
-			// und dort nicht die System-Variable lower_case_table_names nicht gesetzt ist
+			// Dies kann vorkommen, wenn man eine MySQL-datenbank von Windows ->
+			// Linuz kopiert
+			// und dort nicht die System-Variable lower_case_table_names nicht
+			// gesetzt ist
 			// Anmerkung von Niklaus Giger
 			log.log("Komisch!!! Tabelle " + tableName + " " + nrFounds + "-mal gefunden!!",
 				Log.ERRORS);
