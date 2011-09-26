@@ -8,7 +8,7 @@
  * Contributors:
  *    G. Weirich - initial implementation
  * 
- *  $Id: KonsDetailView.java af4f74a0d7a4 2011/08/25 08:10:53 thomashu $
+ *  $Id$
  *******************************************************************************/
 
 package ch.elexis.views;

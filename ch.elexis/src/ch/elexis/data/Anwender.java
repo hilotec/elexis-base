@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2005-2010, G. Weirich and Elexis
+ * Copyright (c) 2005-2011, G. Weirich and Elexis
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -8,7 +8,7 @@
  * Contributors:
  *    G. Weirich - initial implementation
  * 
- *  $Id: Anwender.java 6324 2010-05-02 11:31:51Z rgw_ch $
+ *  $Id$
  *******************************************************************************/
 package ch.elexis.data;
 
@@ -298,15 +298,16 @@ public class Anwender extends Person {
 				Desk.updateFont(PreferenceConstants.USR_DEFAULTFONT);
 				IWorkbenchWindow win = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
 				PlatformUI.getWorkbench().showPerspective(perspektive, win);
-				Hub.heart.resume(true);
-				ElexisEventDispatcher.getInstance().fire(
-					new ElexisEvent(Hub.actUser, Anwender.class, ElexisEvent.EVENT_USER_CHANGED));
 				return true;
 			} catch (Exception ex) {
 				ExHandler.handle(ex);
 				SWTHelper.showError("Perspektive nicht gefunden",
 					"Konnte die eingestellte Startperspektive " + perspektive + " nicht laden.");
 				return true;
+			}finally{
+				Hub.heart.resume(true);
+				ElexisEventDispatcher.getInstance().fire(
+					new ElexisEvent(Hub.actUser, Anwender.class, ElexisEvent.EVENT_USER_CHANGED));
 			}
 			
 		}

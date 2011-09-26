@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2005-2010, G. Weirich and Elexis
+ * Copyright (c) 2005-2011, G. Weirich and Elexis
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -7,8 +7,6 @@
  *
  * Contributors:
  *    G. Weirich - initial implementation
- * 
- *    $Id: Hub.java 5a2a3a739ae9 2011/08/09 11:47:10 rgw $
  *******************************************************************************/
 
 package ch.elexis;
@@ -75,7 +73,7 @@ public class Hub extends AbstractUIPlugin {
 	public static final String PLUGIN_ID = "ch.elexis"; //$NON-NLS-1$
 	public static final String COMMAND_PREFIX = PLUGIN_ID + ".commands."; //$NON-NLS-1$
 	static final String neededJRE = "1.6.0"; //$NON-NLS-1$
-	public static final String Version = "2.1.5.x"; //$NON-NLS-1$
+	public static final String Version = "2.1.5"; //$NON-NLS-1$
 	public static final String DBVersion = "1.8.10"; //$NON-NLS-1$
 	public static final String SWTBOTTEST_KEY = "ch.elexis.swtbottest.key"; //$NON-NLS-1$
 	static final String[] mine = {
