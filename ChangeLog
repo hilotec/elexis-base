@@ -1,6 +1,11 @@
 Offene Probleme
 - Tests von agenda, arzttarife von trunk sind noch nicht migriert
 
+Changelog für 2.1.5.4
+a8e2b3912093: 2011-09-23: Niklaus Giger: Ticket #412: may start DemoDB & all DBs via properties
+22fc2e7bcfa4: 2011-09-11: Niklaus Giger: Anpassungen downloads & symlinks für build
+8d9bb973afe8: 2011-09-11: thomashu: Ticket #412: Fix verschwindende Konsultationstexte
+
 Changelog für 2.1.5.3
 af4f74a0d7a4: 2011-08-25: thomashu: Ticket: #412 - added check if text changed before trying to save the Konsultation
                           rfw@iMac: Various cleanup for fixing build/konfigurator issues
