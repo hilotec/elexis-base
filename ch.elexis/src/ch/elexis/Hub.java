@@ -73,7 +73,7 @@ public class Hub extends AbstractUIPlugin {
 	public static final String PLUGIN_ID = "ch.elexis"; //$NON-NLS-1$
 	public static final String COMMAND_PREFIX = PLUGIN_ID + ".commands."; //$NON-NLS-1$
 	static final String neededJRE = "1.6.0"; //$NON-NLS-1$
-	public static final String Version = "2.1.5"; //$NON-NLS-1$
+	public static final String Version = "2.1.5.4"; //$NON-NLS-1$
 	public static final String DBVersion = "1.8.10"; //$NON-NLS-1$
 	public static final String SWTBOTTEST_KEY = "ch.elexis.swtbottest.key"; //$NON-NLS-1$
 	static final String[] mine = {
