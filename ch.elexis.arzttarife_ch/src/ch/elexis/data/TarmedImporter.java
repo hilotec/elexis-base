@@ -75,8 +75,9 @@ public class TarmedImporter extends ImporterPage {
 	
 	AccessWrapper aw;
 	JdbcLink pj;
+	private JdbcLink cacheDb = null; // As we have problems parsing dates using the postgresql-JdBC,
+// we create a temporary H2 DB
 	Stm source, dest;
-	// Text tDb;
 	private String lang;
 	private Database mdbDB;
 	private String mdbFilename;
@@ -85,7 +86,7 @@ public class TarmedImporter extends ImporterPage {
 	private int count = 0; // Our counter for the progress monitor. Twice. Once for Access import,
 // then real import
 	private boolean updateBlockWarning = false;
-
+	
 	public TarmedImporter(){}
 	
 	@Override
@@ -140,7 +141,7 @@ public class TarmedImporter extends ImporterPage {
 						mdbFilename);
 				monitor.subTask(msg);
 				try {
-					int nrRows = aw.convertTable(tablename, pj);
+					int nrRows = aw.convertTable(tablename, cacheDb);
 					monitor.worked((int) (nrRows * weight));
 				} catch (SQLException e) {
 					System.out.println("Failed to import table " + tablename);//$NON-NLS-1$
@@ -162,8 +163,7 @@ public class TarmedImporter extends ImporterPage {
 		iter = cachedDbTables.iterator();
 		while (iter.hasNext()) {
 			tablename = iter.next();
-			pj = PersistentObject.getConnection();
-			pj.exec("DROP TABLE IF EXISTS " + tablename);//$NON-NLS-1$
+			cacheDb.exec("DROP TABLE IF EXISTS " + tablename);//$NON-NLS-1$
 		}
 		return Status.OK_STATUS;
 	}
@@ -176,6 +176,12 @@ public class TarmedImporter extends ImporterPage {
 	 */
 	public IStatus doImport(final IProgressMonitor monitor) throws Exception{
 		count = 0;
+		pj = PersistentObject.getConnection();
+		if (pj.DBFlavor.equals("h2") || pj.DBFlavor.equals("hsql"))
+			cacheDb = pj;
+		else
+			cacheDb = new JdbcLink("org.h2.Driver", "jdbc:h2:mem:tarmed_import", "hsql");
+		cacheDb.connect("", "");
 		if (openAccessDatabase(monitor, results[0]) != Status.OK_STATUS
 			|| deleteCachedAccessTables(monitor) != Status.OK_STATUS
 			|| importAllAccessTables(monitor) != Status.OK_STATUS) {
@@ -183,17 +189,16 @@ public class TarmedImporter extends ImporterPage {
 			cachedDbTables = null;
 			return Status.CANCEL_STATUS;
 		}
-
-		pj = PersistentObject.getConnection();
+		
 		lang = JdbcLink.wrap(Hub.localCfg.get(PreferenceConstants.ABL_LANGUAGE, "d").toUpperCase()); //$NON-NLS-1$
 		monitor.subTask(Messages.TarmedImporter_connecting);
 		
 		// if there are old ids in the database we have to convert to new ids
 		TarmedLeistung leistung = new TarmedLeistung("00.0010");
 		boolean updateIDs = leistung.exists();
-
+		
 		try {
-			source = pj.getStatement();
+			source = cacheDb.getStatement();
 			dest = pj.getStatement();
 			monitor.subTask(Messages.TarmedImporter_deleteOldData);
 			
@@ -238,8 +243,7 @@ public class TarmedImporter extends ImporterPage {
 			while (res.next() == true) {
 				validFrom.set(res.getString("GUELTIG_VON"));
 				String id = res.getString("LNR") + "-" + validFrom.toString(TimeTool.DATE_COMPACT); //$NON-NLS-1$			
-// System.out.println("IMPORT id: " + id);
-
+				
 				TarmedLeistung tl = TarmedLeistung.load(id);
 				if (tl.exists()) {
 					continue;
@@ -255,13 +259,14 @@ public class TarmedImporter extends ImporterPage {
 					"GueltigVon", "GueltigBis" //$NON-NLS-1$ //$NON-NLS-2$
 				}, tsValid.from.toString(TimeTool.DATE_COMPACT),
 					tsValid.until.toString(TimeTool.DATE_COMPACT)); //$NON-NLS-1$ //$NON-NLS-2$
-				Stm sub = pj.getStatement();
+				Stm stmCached = cacheDb.getStatement();
 				
 				// get QL_DIGNITAET
 				String dqua = "";
 				ResultSet rsub =
-					sub.query(String.format("SELECT * FROM %sLEISTUNG_DIGNIQUALI WHERE LNR=%s",
-						ImportPrefix, JdbcLink.wrap(tl.getCode()))); //$NON-NLS-1$
+					stmCached.query(String.format(
+						"SELECT * FROM %sLEISTUNG_DIGNIQUALI WHERE LNR=%s", ImportPrefix,
+						JdbcLink.wrap(tl.getCode()))); //$NON-NLS-1$
 				List<Map<String, String>> validResults = getValidValueMaps(rsub, validFrom);
 				if (!validResults.isEmpty()) {
 					dqua = getLatestMap(validResults).get("QL_DIGNITAET");
@@ -271,7 +276,7 @@ public class TarmedImporter extends ImporterPage {
 				// get BEZ_255, MED_INTERPRET, TECH_INTERPRET
 				String kurz = ""; //$NON-NLS-1$
 				rsub =
-					sub.query(String.format(
+					stmCached.query(String.format(
 						"SELECT * FROM %sLEISTUNG_TEXT WHERE SPRACHE=%s AND LNR=%s", ImportPrefix,
 						lang, JdbcLink.wrap(tl.getCode()))); //$NON-NLS-1$
 				validResults = getValidValueMaps(rsub, validFrom);
@@ -288,7 +293,7 @@ public class TarmedImporter extends ImporterPage {
 				rsub.close();
 				tl.set(new String[] {
 					"DigniQuali", "Text"}, dqua, kurz); //$NON-NLS-1$ //$NON-NLS-2$
-
+				
 				Hashtable<String, String> ext = tl.loadExtension();
 				put(ext, res, "LEISTUNG_TYP", "SEITE", "SEX", "ANAESTHESIE", "K_PFL", //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$
 					"BEHANDLUNGSART", "TP_AL", "TP_ASSI", "TP_TL", "ANZ_ASSI", //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$ //$NON-NLS-5$
@@ -297,7 +302,7 @@ public class TarmedImporter extends ImporterPage {
 				
 				// get LNR_MASTER
 				rsub =
-					sub.query(String.format(
+					stmCached.query(String.format(
 						"SELECT * FROM %sLEISTUNG_HIERARCHIE WHERE LNR_SLAVE=%s", ImportPrefix,
 						JdbcLink.wrap(tl.getCode()))); //$NON-NLS-1$
 				validResults = getValidValueMaps(rsub, validFrom);
@@ -310,13 +315,18 @@ public class TarmedImporter extends ImporterPage {
 // else
 // sb.append(", " + map.get("LNR_MASTER"));
 // }
-					ext.put("Bezug", validResults.get(0).get("LNR_MASTER")); //$NON-NLS-1$
+					Map<String, String> what = validResults.get(0);
+					if (what != null) {
+						String content = what.get("LNR_MASTER"); //$NON-NLS-1$
+						if (content != null)
+							ext.put("Bezug", content); //$NON-NLS-1$
+					}
 				}
 				rsub.close();
 				
 				// get LNR_SLAVE, TYP
 				rsub =
-					sub.query(String.format(
+					stmCached.query(String.format(
 						"SELECT * FROM %sLEISTUNG_KOMBINATION WHERE LNR_MASTER=%s", ImportPrefix,
 						JdbcLink.wrap(tl.getCode()))); //$NON-NLS-1$
 				String kombination_and = ""; //$NON-NLS-1$
@@ -347,7 +357,7 @@ public class TarmedImporter extends ImporterPage {
 				
 				// get LNR_SLAVE, TYP
 				rsub =
-					sub.query(String.format(
+					stmCached.query(String.format(
 						"SELECT * FROM %sLEISTUNG_KUMULATION WHERE LNR_MASTER=%s", ImportPrefix,
 						JdbcLink.wrap(tl.getCode()))); //$NON-NLS-1$
 				String exclusion = ""; //$NON-NLS-1$
@@ -385,8 +395,9 @@ public class TarmedImporter extends ImporterPage {
 				
 				// get OPERATOR, MENGE, ZR_ANZAHL, PRO_NACH, ZR_EINHEIT
 				rsub =
-					sub.query(String.format("SELECT * FROM %sLEISTUNG_MENGEN_ZEIT WHERE LNR=%s",
-						ImportPrefix, JdbcLink.wrap(tl.getCode()))); //$NON-NLS-1$
+					stmCached.query(String.format(
+						"SELECT * FROM %sLEISTUNG_MENGEN_ZEIT WHERE LNR=%s", ImportPrefix,
+						JdbcLink.wrap(tl.getCode()))); //$NON-NLS-1$
 				String limits = ""; //$NON-NLS-1$
 				validResults = getValidValueMaps(rsub, validFrom);
 				if (!validResults.isEmpty()) {
@@ -405,8 +416,8 @@ public class TarmedImporter extends ImporterPage {
 					ext.put("limits", limits); //$NON-NLS-1$
 				}
 				tl.flushExtension();
-				pj.releaseStatement(sub);
-
+				cacheDb.releaseStatement(stmCached);
+				
 				monitor.worked(1);
 				if (monitor.isCanceled()) {
 					return Status.CANCEL_STATUS;
@@ -417,15 +428,14 @@ public class TarmedImporter extends ImporterPage {
 			if (updateIDs) {
 				updateExistingIDs(monitor);
 			}
-
+			
 			monitor.done();
 			String message = Messages.TarmedImporter_successMessage;
-			if(updateBlockWarning) {
+			if (updateBlockWarning) {
 				message = message + "\n" + Messages.TarmedImporter_updateBlockWarning;
 			}
 			
-			SWTHelper.showInfo(Messages.TarmedImporter_successTitle,
-				message);
+			SWTHelper.showInfo(Messages.TarmedImporter_successTitle, message);
 			return Status.OK_STATUS;
 			
 		} catch (Exception ex) {
@@ -452,7 +462,7 @@ public class TarmedImporter extends ImporterPage {
 		// update existing ids of Verrechnet
 		try {
 			ps = pj.prepareStatement("UPDATE leistungen SET leistg_code=? WHERE id=?"); //$NON-NLS-1$
-
+			
 			Query<Verrechnet> vQuery = new Query<Verrechnet>(Verrechnet.class);
 			vQuery.add(Verrechnet.CLASS, "=", TarmedLeistung.class.getName());
 			List<Verrechnet> verrechnete = vQuery.execute();
@@ -574,12 +584,13 @@ public class TarmedImporter extends ImporterPage {
 	private void importDefinition(final String... strings) throws IOException, SQLException{
 		
 		Stm stm = pj.getStatement();
+		Stm stmCached = cacheDb.getStatement();
 		PreparedStatement ps =
 			pj.prepareStatement("INSERT INTO TARMED_DEFINITIONEN (Spalte,Kuerzel,Titel) VALUES (?,?,?)"); //$NON-NLS-1$
 		try {
 			for (String s : strings) {
 				ResultSet res =
-					stm.query(String.format(
+					stmCached.query(String.format(
 						"SELECT * FROM %sCT_" + s + " WHERE SPRACHE=%s", ImportPrefix, lang)); //$NON-NLS-1$
 				while (res.next()) {
 					ps.setString(1, s);
@@ -593,6 +604,7 @@ public class TarmedImporter extends ImporterPage {
 			ExHandler.handle(ex);
 		} finally {
 			pj.releaseStatement(stm);
+			cacheDb.releaseStatement(stmCached);
 		}
 	}
 	
@@ -637,7 +649,7 @@ public class TarmedImporter extends ImporterPage {
 		}
 		return ret;
 	}
-
+	
 	/**
 	 * Get a List of Maps containing the rows of the ResultSet with a matching valid date
 	 * information. This is needed as we can not make constraints on a date represented as string in

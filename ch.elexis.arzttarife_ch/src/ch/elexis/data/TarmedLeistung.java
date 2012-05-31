@@ -190,9 +190,8 @@ public class TarmedLeistung extends VerrechenbarAdapter {
 		final String DigniQuanti, final String sparte){
 		create(code);
 		j.exec("INSERT INTO TARMED_EXTENSION (CODE) VALUES (" + getWrappedId() + ")"); //$NON-NLS-1$ //$NON-NLS-2$
-		set(
-			new String[] {
-				"Parent", FLD_DIGNI_QUALI, FLD_DIGNI_QUANTI, FLD_SPARTE}, parent, DigniQuali, DigniQuanti, sparte); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
+		set(new String[] {
+			"Parent", FLD_DIGNI_QUALI, FLD_DIGNI_QUANTI, FLD_SPARTE}, parent, DigniQuali, DigniQuanti, sparte); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
 	}
 	
 	/** Konstruktor wird nur vom Importer gebraucht */
@@ -203,12 +202,12 @@ public class TarmedLeistung extends VerrechenbarAdapter {
 		set(new String[] {
 			FLD_CODE, "Parent", FLD_DIGNI_QUALI, FLD_DIGNI_QUANTI, FLD_SPARTE}, code, parent, DigniQuali, DigniQuanti, sparte); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
 	}
-
+	
 	/*
 	 * public String[] getDisplayedFields(){ return new String[] { "ID", "Text"}; //$NON-NLS-1$
 	 * //$NON-NLS-2$ }
 	 */
-
+	
 	@Override
 	public String getLabel(){
 		return getCode() + " " + getText();
@@ -270,8 +269,7 @@ public class TarmedLeistung extends VerrechenbarAdapter {
 		if (ext != null) {
 			byte[] flat = StringTool.flatten(ext, StringTool.ZIP, null);
 			PreparedStatement preps =
-				j
-					.prepareStatement("UPDATE TARMED_EXTENSION SET limits=? WHERE CODE=" + getWrappedId()); //$NON-NLS-1$
+				j.prepareStatement("UPDATE TARMED_EXTENSION SET limits=? WHERE CODE=" + getWrappedId()); //$NON-NLS-1$
 			try {
 				preps.setBytes(1, flat);
 				preps.execute();
@@ -289,8 +287,7 @@ public class TarmedLeistung extends VerrechenbarAdapter {
 	
 	/** Medizinische Interpretation setzen (Wird nur vom Importer gebraucht) */
 	public void setMedInterpretation(final String text){
-		j
-			.exec("UPDATE TARMED_EXTENSION SET med_interpret=" + JdbcLink.wrap(text) + " WHERE CODE=" + getWrappedId()); //$NON-NLS-1$ //$NON-NLS-2$
+		j.exec("UPDATE TARMED_EXTENSION SET med_interpret=" + JdbcLink.wrap(text) + " WHERE CODE=" + getWrappedId()); //$NON-NLS-1$ //$NON-NLS-2$
 	}
 	
 	/** Technische Interpretation auslesen */
@@ -301,8 +298,7 @@ public class TarmedLeistung extends VerrechenbarAdapter {
 	
 	/** Technische Intepretation setzen (Wird nur vom Importer gebraucht */
 	public void setTechInterpretation(final String text){
-		j
-			.exec("UPDATE TARMED_EXTENSION SET tech_interpret=" + JdbcLink.wrap(text) + " WHERE CODE=" + getWrappedId()); //$NON-NLS-1$ //$NON-NLS-2$
+		j.exec("UPDATE TARMED_EXTENSION SET tech_interpret=" + JdbcLink.wrap(text) + " WHERE CODE=" + getWrappedId()); //$NON-NLS-1$ //$NON-NLS-2$
 	}
 	
 	/** Qualitative Dignität holen (als code) */
@@ -358,11 +354,11 @@ public class TarmedLeistung extends VerrechenbarAdapter {
 		return new TarmedLeistung(id);
 	}
 	
- 	/** Eine Position vom code einlesen */
- 	public static IVerrechenbar getFromCode(final String code){
+	/** Eine Position vom code einlesen */
+	public static IVerrechenbar getFromCode(final String code){
 		return getFromCode(code, new TimeTool());
- 	}
- 	
+	}
+	
 	/** Eine Position vom code einlesen */
 	public static IVerrechenbar getFromCode(final String code, TimeTool date){
 		Query<TarmedLeistung> query = new Query<TarmedLeistung>(TarmedLeistung.class);
@@ -387,7 +383,7 @@ public class TarmedLeistung extends VerrechenbarAdapter {
 	public static class MandantFilter implements IFilter {
 		
 		MandantFilter(final Mandant m){
-
+			
 		}
 		
 		public boolean select(final Object object){
@@ -514,7 +510,11 @@ public class TarmedLeistung extends VerrechenbarAdapter {
 	public TimeTool getGueltigBis(){
 		String value = get(FLD_GUELTIG_BIS);
 		if (!StringTool.isNothing(value)) {
-			return new TimeTool(value);
+			TimeTool res = new TimeTool(value);
+			res.set(TimeTool.HOUR_OF_DAY, 23);
+			res.set(TimeTool.MINUTE, 59);
+			res.set(TimeTool.SECOND, 59);
+			return res;
 		} else {
 			return null;
 		}
@@ -557,7 +557,7 @@ public class TarmedLeistung extends VerrechenbarAdapter {
 		}
 		return "none";
 	}
-
+	
 	@Override
 	public VatInfo getVatInfo(){
 		// TarmedLeistung is a treatment per default
