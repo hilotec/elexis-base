@@ -261,7 +261,9 @@ public class TarmedOptifier implements IOptifier {
 						if (p != null) {
 							String alter = p.getAlter();
 							if (Integer.parseInt(alter) < 6) {
-								TarmedLeistung tl = TarmedLeistung.load("00.0040");
+								TarmedLeistung tl =
+									(TarmedLeistung) TarmedLeistung.getFromCode("00.0040",
+										new TimeTool(kons.getDatum()));
 								add(tl, kons);
 							}
 						}
