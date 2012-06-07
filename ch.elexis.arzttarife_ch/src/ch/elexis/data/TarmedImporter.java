@@ -35,7 +35,15 @@ import java.util.Set;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.events.SelectionListener;
+import org.eclipse.swt.layout.FormAttachment;
+import org.eclipse.swt.layout.FormData;
+import org.eclipse.swt.layout.FormLayout;
+import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Label;
 
 import ch.elexis.Hub;
 import ch.elexis.arzttarife_schweiz.Messages;
@@ -86,6 +94,7 @@ public class TarmedImporter extends ImporterPage {
 	private int count = 0; // Our counter for the progress monitor. Twice. Once for Access import,
 // then real import
 	private boolean updateBlockWarning = false;
+	boolean updateIDs = false;
 	
 	public TarmedImporter(){}
 	
@@ -193,9 +202,10 @@ public class TarmedImporter extends ImporterPage {
 		lang = JdbcLink.wrap(Hub.localCfg.get(PreferenceConstants.ABL_LANGUAGE, "d").toUpperCase()); //$NON-NLS-1$
 		monitor.subTask(Messages.TarmedImporter_connecting);
 		
-		// if there are old ids in the database we have to convert to new ids
+		// always convert ids if there are old ids in the database
 		TarmedLeistung leistung = new TarmedLeistung("00.0010");
-		boolean updateIDs = leistung.exists();
+		if (leistung.exists())
+			updateIDs = true;
 		
 		try {
 			source = cacheDb.getStatement();
@@ -231,7 +241,8 @@ public class TarmedImporter extends ImporterPage {
 				if ((!tl.exists()) || (!parent.equals(tl.get("Parent")))) { //$NON-NLS-1$
 					tl = new TarmedLeistung(code, parent, "", "", ""); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 				}
-				tl.setText(txt);
+				if (tl.exists())
+					tl.setText(txt);
 				monitor.worked(1);
 			}
 			res.close();
@@ -494,12 +505,12 @@ public class TarmedImporter extends ImporterPage {
 				try {
 					ps.close();
 				} catch (SQLException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
+					ExHandler.handle(e);
 				}
 			}
 		}
-		
+
 		// update existing ids of Leistungsblock
 		try {
 			Query<Leistungsblock> lQuery = new Query<Leistungsblock>(Leistungsblock.class);
@@ -521,11 +532,16 @@ public class TarmedImporter extends ImporterPage {
 								TarmedLeistung leistung =
 									(TarmedLeistung) TarmedLeistung.getFromCode(parts[1]);
 								if (leistung != null) {
+									// add new string
 									if (newCodes.length() > 0)
 										newCodes.append(",");
 									newCodes.append(leistung.storeToString());
 								} else {
 									updateBlockWarning = true;
+									// set string old string
+									if (newCodes.length() > 0)
+										newCodes.append(",");
+									newCodes.append(p);
 								}
 							} else {
 								if (newCodes.length() > 0)
@@ -540,8 +556,8 @@ public class TarmedImporter extends ImporterPage {
 				}
 			}
 		} catch (UnsupportedEncodingException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
+			ExHandler.handle(e);
 		}
 		
 		// update existing ids in statistics
@@ -615,11 +631,40 @@ public class TarmedImporter extends ImporterPage {
 	
 	@Override
 	public Composite createPage(final Composite parent){
+		FileBasedImporter fis = new ImporterPage.FileBasedImporter(parent, this);
+		fis.setLayoutData(SWTHelper.getFillGridData(1, true, 1, true));
+
+		Composite updateIDsComposite = new Composite(fis, SWT.NONE);
+		updateIDsComposite.setLayoutData(SWTHelper.getFillGridData(1, true, 1, true));
+		updateIDsComposite.setLayout(new FormLayout());
 		
-		Composite ret = new ImporterPage.FileBasedImporter(parent, this);
-		ret.setLayoutData(SWTHelper.getFillGridData(1, true, 1, true));
-		return ret;
+		Label lbl = new Label(updateIDsComposite, SWT.NONE);
+		lbl.setText(Messages.TarmedImporter_updateOldIDEntries);
+		final Button updateIDsBtn =
+			new Button(updateIDsComposite, SWT.CHECK);
+			
+		FormData fd = new FormData();
+		fd.top = new FormAttachment(0, 0);
+		fd.left = new FormAttachment(0, 0);
+		lbl.setLayoutData(fd);
+
+		fd = new FormData();
+		fd.top = new FormAttachment(0, 0);
+		fd.left = new FormAttachment(lbl, 5);
+		updateIDsBtn.setLayoutData(fd);
 		
+		updateIDsBtn.addSelectionListener(new SelectionListener() {
+			public void widgetSelected(SelectionEvent e){
+				updateIDs = updateIDsBtn.getSelection();
+			}
+
+			@Override
+			public void widgetDefaultSelected(SelectionEvent e){
+				updateIDs = updateIDsBtn.getSelection();
+			}
+		});
+
+		return fis;
 	}
 	
 	private String convert(ResultSet res, String field) throws Exception{
@@ -734,6 +779,7 @@ public class TarmedImporter extends ImporterPage {
 			stm.executeUpdate();
 		} catch (Exception ex) {
 			ex.printStackTrace();
+			ExHandler.handle(ex);
 		} finally {
 			try {
 				stm.close();
@@ -764,6 +810,7 @@ public class TarmedImporter extends ImporterPage {
 			res = stm.query(sql);
 		} catch (JdbcLinkException je) {
 			je.printStackTrace();
+			ExHandler.handle(je);
 		} finally {
 			if (stm != null)
 				conn.releaseStatement(stm);
