@@ -241,8 +241,10 @@ public class TarmedImporter extends ImporterPage {
 				if ((!tl.exists()) || (!parent.equals(tl.get("Parent")))) { //$NON-NLS-1$
 					tl = new TarmedLeistung(code, parent, "", "", ""); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
 				}
-				if (tl.exists())
+				if (tl.exists()) {
 					tl.setText(txt);
+					tl.flushExtension();
+				}
 				monitor.worked(1);
 			}
 			res.close();
@@ -472,7 +474,8 @@ public class TarmedImporter extends ImporterPage {
 		PreparedStatement ps = null;
 		// update existing ids of Verrechnet
 		try {
-			ps = pj.prepareStatement("UPDATE leistungen SET leistg_code=? WHERE id=?"); //$NON-NLS-1$
+			ps =
+				pj.prepareStatement("UPDATE " + Verrechnet.TABLENAME + " SET leistg_code=? WHERE id=?"); //$NON-NLS-1$
 			
 			Query<Verrechnet> vQuery = new Query<Verrechnet>(Verrechnet.class);
 			vQuery.add(Verrechnet.CLASS, "=", TarmedLeistung.class.getName());
@@ -500,6 +503,7 @@ public class TarmedImporter extends ImporterPage {
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();
+			ExHandler.handle(e);
 		} finally {
 			if (ps != null) {
 				try {
@@ -518,7 +522,8 @@ public class TarmedImporter extends ImporterPage {
 			for (Leistungsblock block : blocks) {
 				StringBuilder newCodes = new StringBuilder();
 				// get blob
-				byte[] compressed = getBinaryRaw("leistungen", "leistungsblock", block.getId());
+				byte[] compressed =
+					getBinaryRaw(Leistungsblock.LEISTUNGEN, Leistungsblock.TABLENAME, block.getId());
 				if (compressed != null) {
 					// get String representing all contained leistungen
 					String storable = new String(CompEx.expand(compressed), "UTF-8"); //$NON-NLS-1$
@@ -551,7 +556,8 @@ public class TarmedImporter extends ImporterPage {
 						}
 					}
 					// write the updated String back
-					setBinaryRaw("leistungen", "leistungsblock", block.getId(),
+					setBinaryRaw(Leistungsblock.LEISTUNGEN, Leistungsblock.TABLENAME,
+						block.getId(),
 						CompEx.Compress(newCodes.toString(), CompEx.ZIP));
 				}
 			}
