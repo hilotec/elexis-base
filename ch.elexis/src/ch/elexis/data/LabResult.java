@@ -27,6 +27,7 @@ import ch.rgw.tools.TimeTool;
 public class LabResult extends PersistentObject {
 	public static final String LABRESULT_UNSEEN = "Labresult:unseen";
 	public static final String DATE = "Datum";
+	public static final String TIME = "Zeit";
 	public static final String FLAGS = "Flags";
 	public static final String COMMENT = "Kommentar";
 	public static final String RESULT = "Resultat";
@@ -47,7 +48,7 @@ public class LabResult extends PersistentObject {
 	
 	static {
 		addMapping(TABLENAME, PATIENT_ID, DATE_COMPOUND, ITEM_ID, RESULT, COMMENT, FLAGS,
-			"Quelle=Origin");
+			"Quelle=Origin", TIME);
 		
 	}
 	
@@ -139,6 +140,17 @@ public class LabResult extends PersistentObject {
 		return get(DATE);
 	}
 	
+	public TimeTool getDateTime(){
+		String temp = get(TIME);
+		if ((temp == null) || ("".equals(temp)))
+			temp = "000000";
+		while (temp.length() < 6) {
+			temp += "0";
+		}
+		return new TimeTool(get(DATE) + " " + temp.substring(0, 2) + ":" + temp.substring(2, 4)
+			+ ":" + temp.substring(4, 6));
+	}
+	
 	public LabItem getItem(){
 		return LabItem.load(get(ITEM_ID));
 	}
@@ -188,8 +200,8 @@ public class LabResult extends PersistentObject {
 	@Override
 	public String getLabel(){
 		StringBuilder sb = new StringBuilder();
-		sb.append(getItem().getLabel()).append(", ").append(getDate()).append(": ").append(
-			getResult());
+		sb.append(getItem().getLabel()).append(", ").append(getDate()).append(": ")
+			.append(getResult());
 		return sb.toString();
 		// return getResult();
 	}
