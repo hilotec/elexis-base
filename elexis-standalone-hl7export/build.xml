@@ -39,9 +39,13 @@ under the License.
 	<!-- Compile                                                            -->
 	<!-- ================================================================== -->
 	<target name="build">
+    <!-- The following lines are commented out because the path to the target
+         file is wrong, the file does not exist and the targeted project does
+         not provide any build file.
 		<copy todir="lib">
 			<fileset file="${prerequisite1}" />
 		</copy>
+		-->
 		<copy todir="${build.dir}">
 			<fileset dir="${src.dir}" includes="**/*.*" />
 		</copy>
