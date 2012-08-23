@@ -33,3 +33,6 @@ syntax: regexp
 ^dokumentation/elexis\.synctex\.gz\(busy\)$
 syntax: regexp
 ^TestElexis/ch/elexis/tests/Rename\.java$
+syntax: glob
+.directory
+elexis-standalone-hl7export/output
