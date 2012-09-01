@@ -19,7 +19,9 @@ public class KontaktOrderManagement extends PersistentObject {
 	
 	public static final String FLD_KONTAKT_ID = "KONTAKT_ID"; //$NON-NLS-1$
 	public static final String FLD_ORDER_NR = "ORDER_NR"; //$NON-NLS-1$
-	
+  public static final String FLD_ORDER_NR_DOMAIN = "ORDER_NR_DOMAIN"; //$NON-NLS-1$
+  public static final String ORDER_DOMAIN_LAB_ORDER_FILLER_MEDICS = "7601001383647"; // Hauptsitz Medics Labor AG, Bern //$NON-NLS-1$
+
 	public static long FIRST_ORDER_NR = 100000;
 	
 	private static final JdbcLink j = getConnection();

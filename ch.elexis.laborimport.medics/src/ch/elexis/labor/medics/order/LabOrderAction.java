@@ -284,7 +284,7 @@ public class LabOrderAction extends Action {
 				patient.getGeschlecht().toUpperCase()));
 		}
 		hl7Patient.setBirthdate(new TimeTool(patient.getGeburtsdatum()).getTime());
-		hl7Patient.setPatCode(patient.getPatCode());
+		hl7Patient.setPatId(patient.getPatCode());
 		
 		// Rechnungsempfaenger
 		HL7Kostentraeger hl7Rechnungsempfaenger = new HL7Kostentraeger();

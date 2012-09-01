@@ -37,6 +37,11 @@ import ch.elexis.util.SWTHelper;
 import ch.rgw.io.FileTool;
 
 public class LabOrderImport extends ImporterPage {
+
+  // Als Domain für die Filler-Auftragsnummer die GLN von Medics verwenden
+  public static final String ORDER_NR_DOMAIN_FILLER =
+      KontaktOrderManagement.ORDER_DOMAIN_LAB_ORDER_FILLER_MEDICS;
+
 	protected final SimpleDateFormat df = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss"); //$NON-NLS-1$
 	
 	@Override
@@ -86,6 +91,7 @@ public class LabOrderImport extends ImporterPage {
 						}
 						if (importOk) {
 							importOk = addObservations(observation);
+							addPdfToOmnivore(hl7File, observation);
 						}
 					} catch (ca.uhn.hl7v2.HL7Exception ex) {
 						importOk = false;
@@ -105,7 +111,7 @@ public class LabOrderImport extends ImporterPage {
 					}
 					if (importOk) {
 						// Archivieren
-						moveToArchiv(hl7File);
+						moveToArchive(hl7File);
 					} else {
 						if (moveToError(hl7File)) {
 							errorMovedCount++;
@@ -179,7 +185,7 @@ public class LabOrderImport extends ImporterPage {
 	 * 
 	 * @param file
 	 */
-	private boolean moveToArchiv(final File file){
+	private boolean moveToArchive(final File file){
 		String archivDir = MedicsPreferencePage.getArchivDir();
 		boolean ok = false;
 		if (FileTool.copyFile(file, new File(archivDir + File.separator + file.getName()),
@@ -246,8 +252,90 @@ public class LabOrderImport extends ImporterPage {
 		}
 		return false;
 	}
-	
-	/**
+
+  /**
+   * Searches for a PDF file corresponding to the specified <tt>hl7File</tt>
+   * and imports it into <cite>Omnivore</cite>. If no such file is found, then
+   * this method returns immediately after having written an informational
+   * message to the logger.
+   * <p>
+   * If there is a file, in the same folder and having the same name as the
+   * specified <tt>hl7File</tt> but with the <tt>.pdf</tt> extension, then
+   * this file is imported into <cite>Omnivore</cite>.
+   * </p><p>
+   * If the file already exists in <cite>Omnivore</cite>, then it gets
+   * overwritten only, if the file to import is newer than the existing one,
+   * or if {@link PatientLabor#setOverwriteResults(boolean)} was called with
+   * <tt>true</tt> as parameter.
+   * </p><p>
+   * If the file import into <cite>Omnivore</cite> fails, or if, for any
+   * reason, the {@link #getPatient(ObservationMessage)} return <tt>null</tt>,
+   * the PDF file is moved to the error folder. In all other cases the file
+   * is moved to the archive folder.
+   * </p>
+   * @param hl7File
+   *   the currently processed <cite>HL7 file</cite>.
+   * @param observation
+   *   the observation messages.
+   * @throws IOException
+   *   if, for any reason, the PDF document could not be store in
+   *   <cite>Omnivore</cite>.
+   * @throws NullPointerException
+   *   if the specified HL7 file or the observation message is <tt>null</tt>.
+   */
+	private void addPdfToOmnivore(File hl7File, ObservationMessage observation)
+  throws IOException {
+    if (hl7File == null) {
+      throw new NullPointerException("HL7 file is null.");
+    } else if (observation == null) {
+      throw new NullPointerException("Observation message is null.");
+    }
+    // Build the PDF file name and check if it exists
+    //
+    String pdfFileName = hl7File.getName().replaceAll("\\.[^\\.]+$", ".pdf");
+    File pdfFile = new File(hl7File.getParent(), pdfFileName);
+    if (!pdfFile.exists()) {
+      MedicsLogger.getLogger().println(
+          Messages.LabOrderAction_infoNoMatchingPdfFile);
+      return;
+    }
+    // If patient can not be retrieved move file to error and abort
+    //
+    Patient patient = getPatient(observation);
+    if (patient == null) {
+      moveToError(pdfFile);
+      return;
+    }
+    // Parameters for the saveLaborItem() function
+    //
+    SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    Date timeStamp = observation.getDateTimeOfTransaction();
+    String title = Messages.LabOrderImport_LabResult +
+        df.format(timeStamp) + ".pdf";
+    String category = MedicsPreferencePage.getDokumentKategorie();
+    String orderId = getAuftragsId(observation);
+
+    // Import PDF file into Omnivore
+    //
+    PatientLabor labor = new PatientLabor(patient);
+    boolean fileImported = false;
+    try {
+      labor.saveLaborItem(title, category, pdfFile,
+          timeStamp, orderId, pdfFileName);
+      fileImported = true;
+    }
+    // Move file to archive or error directory
+    //
+    finally {
+      if (fileImported) {
+        moveToArchive(pdfFile);
+      } else {
+        moveToError(pdfFile);
+      }
+    }
+	} // End of addPDFToOmnivore()
+
+  /**
 	 * Liest alle Patient mit einer bestimmten PatientenNr. Eigentlich sollte es nur 1 Patient
 	 * geben, aber man weiss ja nie!
 	 * 
@@ -274,7 +362,7 @@ public class LabOrderImport extends ImporterPage {
 		// Suche Patient anhand internal PID oder Auftragsnummer
 		Patient patient = null;
 		String patientId = observation.getPatientId();
-		String auftragsNr = observation.getOrderNumber();
+		String auftragsNr = observation.getOrderNumberPlacer();
 		// Anhand observation.getOrderNumber() den Patienten suchen
 		if (auftragsNr != null && auftragsNr.length() > 0) {
 			Query<KontaktOrderManagement> patientOrderNrQuery =
@@ -355,7 +443,33 @@ public class LabOrderImport extends ImporterPage {
 		return patient;
 	}
 	
-	@Override
+	/**
+   * Liefert die ID des Eintrags in KontaktOrderManagement zurück, sofern ein Eintrag existiert
+   * 
+   * @param observation
+   *            Angaben aus der HL7 Nachricht
+   * @return ID des Eintrags in KontaktOrderManagement oder null
+   */
+  private static String getAuftragsId(ObservationMessage observation){
+    String orderId = ""; //$NON-NLS-1$
+    long auftragsNrFiller = -1;
+    try {
+      auftragsNrFiller = Long.parseLong(observation.getOrderNumberFiller());
+    } catch (Exception ex) {}
+    Query<KontaktOrderManagement> patientOrderNrQuery =
+      new Query<KontaktOrderManagement>(KontaktOrderManagement.class);
+    patientOrderNrQuery.add(KontaktOrderManagement.FLD_ORDER_NR, Query.EQUALS,
+      Long.toString(auftragsNrFiller));
+    patientOrderNrQuery.add(KontaktOrderManagement.FLD_ORDER_NR_DOMAIN, Query.EQUALS,
+      ORDER_NR_DOMAIN_FILLER);
+    List<KontaktOrderManagement> orderNrList = patientOrderNrQuery.execute();
+    if (orderNrList.size() > 0) {
+      orderId = orderNrList.get(0).getId();
+    }
+    return orderId;
+  }
+
+  @Override
 	public String getTitle(){
 		return Messages.LabOrderImport_titleImport;
 	}

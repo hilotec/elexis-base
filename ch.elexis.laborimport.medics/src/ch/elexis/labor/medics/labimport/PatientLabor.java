@@ -3,6 +3,8 @@ package ch.elexis.labor.medics.labimport;
 import java.io.File;
 import java.io.IOException;
 import java.text.MessageFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 
 import ch.elexis.ElexisException;
@@ -16,6 +18,7 @@ import ch.elexis.hl7.model.StringData;
 import ch.elexis.hl7.model.TextData;
 import ch.elexis.labor.medics.MedicsPreferencePage;
 import ch.elexis.labor.medics.Messages;
+import ch.elexis.laborimport.medics.util.MedicsLogger;
 import ch.elexis.services.GlobalServiceDescriptors;
 import ch.elexis.services.IDocumentManager;
 import ch.elexis.text.GenericDocument;
@@ -26,22 +29,40 @@ import ch.rgw.tools.TimeSpan;
 import ch.rgw.tools.TimeTool;
 
 public class PatientLabor {
-	private static String KUERZEL = Messages.PatientLabor_kuerzelMedics;
-	private static String LABOR_NAME = Messages.PatientLabor_nameMedicsLabor;
-	
+
+  private static String LABOR_NAME = Messages.PatientLabor_nameMedicsLabor;
+  public static String DEFAULT_PRIO = "50"; //$NON-NLS-1$
+  public static String FORMAT_TIME = "HHmmss"; //$NON-NLS-1$
+
+  private static String KUERZEL = Messages.PatientLabor_kuerzelMedics;
+  private static String FIELD_ORGIN = "Quelle"; //$NON-NLS-1$
+  private static int MAX_LEN_RESULT = 80; // Spaltenlänge LABORWERTE.Result
+
 	private Labor myLab = null;
 	
 	private final Patient patient;
 	
 	private IDocumentManager docManager;
-	
+ 
+  private boolean overwriteResults = false;
+
 	public PatientLabor(Patient patient){
-		super();
 		this.patient = patient;
 		initLabor();
 		initDocumentManager();
 	}
-	
+
+  /**
+   * Setting zum Überschreiben von bestehenden Laborresultaten.
+   * 
+   * @param value
+   *   true, wenn Laborwerte überschrieben werden sollen, auch wenn bereits ein
+   *   neuerer der DB vorhanden ist. Sonst false (false ist Normalfall!)
+   */
+  public void setOverwriteResults(boolean value){
+    overwriteResults = value;
+  }
+
 	/**
 	 * Initialisiert document manager (omnivore) falls vorhanden
 	 */
@@ -68,7 +89,7 @@ public class PatientLabor {
 			}
 		}
 	}
-	
+
 	/**
 	 * Adds a document to omnivore (if it not already exists)
 	 * 
@@ -126,7 +147,7 @@ public class PatientLabor {
 		}
 		return labItem;
 	}
-	
+
 	/**
 	 * Liest LabItem
 	 * 
@@ -141,7 +162,9 @@ public class PatientLabor {
 		qli.add(LabResult.DATE, "=", date.toDBString(false)); //$NON-NLS-1$ //$NON-NLS-2$
 		qli.and();
 		qli.add(LabResult.PATIENT_ID, "=", patient.getId()); //$NON-NLS-1$
-		
+    qli.and();
+    qli.add(LabResult.RESULT, "=", name); //$NON-NLS-1$ //$NON-NLS-2$
+
 		LabResult labResult = null;
 		List<LabResult> resultList = qli.execute();
 		if (resultList.size() > 0) {
@@ -298,4 +321,102 @@ public class PatientLabor {
 				tmpPdfFile.getName()), e);
 		}
 	}
+
+  /**
+   * Speichert externer Laborbefund
+   * 
+   * @param title
+   *            Titel, der gespeichert werden soll
+   * @param category
+   *            Kategorie, die verwendet werden soll
+   * @param file
+   *            File, das archiviert werden soll
+   * @param timeStamp
+   *            Timestamp, welcher gespeichert werden soll
+   * @param orderId
+   *            Fremdschlüssel auf kontakt_order_management.id
+   * @param keyword
+   *            Schlüsselwörter, welche gespeichert werden sollen
+   * @throws IOException
+   *   if the document manager is <tt>null</tt> or if, for any reason, the
+   *   labor item could not be store in <cite>Omnivore</cite>.
+   */
+  public void saveLaborItem(String title, String category, File file, Date timeStamp,
+    String orderId, String keyword) throws IOException {
+    String filename = file.getName();
+    if (this.docManager == null) {
+      throw new IOException(MessageFormat.format(
+        Messages.PatientLabor_errorKeineDokumentablage, filename, this.patient.getLabel()));
+    }
+
+    // Kategorie überprüfen/ erstellen
+    checkCreateCategory(category);
+
+    TimeTool dateTime = new TimeTool();
+    dateTime.setTime(timeStamp);
+    SimpleDateFormat sdfZeit = new SimpleDateFormat(FORMAT_TIME);
+    String zeit = sdfZeit.format(timeStamp);
+
+    if (title.length() > MAX_LEN_RESULT)
+      title = "..." + title.substring(title.length() - MAX_LEN_RESULT + 3, title.length()); //$NON-NLS-1$
+
+    // Labor Item erstellen
+    String kuerzel = "doc"; //$NON-NLS-1$
+    LabItem labItem = getLabItem(kuerzel, LabItem.typ.DOCUMENT);
+    if (labItem == null) {
+      labItem =
+        new LabItem(kuerzel, Messages.PatientLabor_nameDokumentLaborParameter, myLab,
+          "", "", //$NON-NLS-1$//$NON-NLS-2$ //$NON-NLS-3$
+          "pdf", LabItem.typ.DOCUMENT, LABOR_NAME, DEFAULT_PRIO); //$NON-NLS-1$ //$NON-NLS-2$
+    }
+    if (orderId == null || "".equals(orderId)) { //$NON-NLS-1$
+      orderId = LABOR_NAME;
+    }
+
+    boolean saved = false;
+    LabResult lr = getLabResult(labItem, title, dateTime);
+    if (lr == null) {
+      // Neues Laborresultat erstellen
+      lr = new LabResult(patient, dateTime, labItem, title, null); //$NON-NLS-1$
+      lr.set(FIELD_ORGIN, orderId); //$NON-NLS-1$
+      lr.set(LabResult.TIME, zeit); //$NON-NLS-1$
+      saved = true;
+    } else {
+      // bestehendes Laborresultat ändern, sofern es neuer ist als das bereits gespeicherte
+      if (overwriteResults || lr.getDateTime().before(timeStamp)) {
+        MedicsLogger
+          .getLogger()
+          .println(
+            MessageFormat
+              .format(
+                Messages.PatientLabor_InfoOverwriteValue, labItem.getKuerzel() + "-" + labItem.getName(), lr.getDateTime().toDBString(true), dateTime.toDBString(true), lr.getResult(), title));  //$NON-NLS-2$
+        lr.setResult(title);
+        lr.set(LabResult.TIME, zeit); //$NON-NLS-1$
+        saved = true;
+      } else {
+        MedicsLogger
+          .getLogger()
+          .println(
+            MessageFormat
+              .format(
+                Messages.PatientLabor_InfoExistingValueIsValid, labItem.getKuerzel() + "-" + labItem.getName(), lr.getDateTime().toDBString(true), dateTime.toDBString(true), lr.getResult(), title));  //$NON-NLS-2$
+      }
+    }
+
+    if (saved) {
+      // Dokument in Omnivore archivieren
+      try {
+        String dateTimeStr = dateTime.toString(TimeTool.DATE_GER);
+        
+        // Zu Dokumentablage hinzufügen
+        addDocument(title, category, dateTimeStr, file);
+        MedicsLogger.getLogger().println(
+          MessageFormat.format(Messages.PatientLabor_InfoDocSavedToOmnivore, title)); 
+        
+      } catch (ElexisException e) {
+        throw new IOException(MessageFormat.format(
+          Messages.PatientLabor_errorAddingDocument, filename), e);
+      }
+    }
+  }
 }
