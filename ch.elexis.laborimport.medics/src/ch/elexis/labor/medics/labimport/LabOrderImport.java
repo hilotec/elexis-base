@@ -305,11 +305,10 @@ public class LabOrderImport extends ImporterPage {
 		}
 		// Parameters for the saveLaborItem() function
 		//
-		SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		Date timeStamp = observation.getDateTimeOfTransaction();
-		if (timeStamp == null)
+		if (timeStamp == null) {
 			timeStamp = observation.getDateTimeOfMessage();
-		String title = Messages.LabOrderImport_LabResult + df.format(timeStamp) + ".pdf";
+		}
 		String category = MedicsPreferencePage.getDokumentKategorie();
 		String orderId = getAuftragsId(observation);
 		
@@ -318,7 +317,7 @@ public class LabOrderImport extends ImporterPage {
 		PatientLabor labor = new PatientLabor(patient);
 		boolean fileImported = false;
 		try {
-			labor.saveLaborItem(title, category, pdfFile, timeStamp, orderId, pdfFileName);
+			labor.saveLaborItem(pdfFileName, category, pdfFile, timeStamp, orderId, pdfFileName);
 			fileImported = true;
 		}
 		// Move file to archive or error directory
